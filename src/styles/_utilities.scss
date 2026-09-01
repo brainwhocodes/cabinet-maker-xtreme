@@ -1,0 +1,83 @@
+// Utilities & Custom Atomic Helper Classes
+@use "tokens" as t;
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-xs { gap: t.$space-xs; }
+.gap-sm { gap: t.$space-sm; }
+.gap-md { gap: t.$space-md; }
+.gap-lg { gap: t.$space-lg; }
+.gap-xl { gap: t.$space-xl; }
+
+// Workshop badge
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: t.$space-xs;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: t.$radius-full;
+  line-height: 1.3;
+
+  &.is-primary {
+    background-color: t.$drafting-blue-light;
+    color: t.$drafting-blue-deep;
+  }
+
+  &.is-warning {
+    background-color: t.$safety-orange-light;
+    color: t.$safety-orange;
+  }
+
+  &.is-success {
+    background-color: t.$success-light;
+    color: t.$success;
+  }
+
+  &.is-danger {
+    background-color: t.$danger-light;
+    color: t.$danger;
+  }
+}
+
+// Custom Workshop Panel Box
+.workshop-panel {
+  background-color: t.$surface;
+  border: 1px solid t.$line;
+  border-radius: t.$radius-lg;
+  padding: t.$space-lg;
+}
+
+.workshop-rail {
+  background-color: t.$surface;
+  border-right: 1px solid t.$line;
+  height: 100%;
+}

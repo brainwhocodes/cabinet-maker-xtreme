@@ -1,0 +1,66 @@
+// Print Stylesheet for BOM & Assembly Step Export
+@media print {
+  body {
+    background-color: #FFF !important;
+    color: #000 !important;
+    font-size: 12pt;
+  }
+
+  nav, .skip-link, .no-print, button, .button, .hud-overlay, .tabs {
+    display: none !important;
+  }
+
+  .bom-container, .assembly-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #CCC !important;
+    padding: 6pt !important;
+  }
+
+  .step-article {
+    break-inside: avoid !important;
+    margin-bottom: 20pt !important;
+    border-bottom: 1px dashed #CCC !important;
+    padding-bottom: 15pt !important;
+  }
+
+  .diagram-frame {
+    border: 1px solid #000 !important;
+    max-height: 250pt !important;
+  }
+
+  .assembly-focus-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .assembly-focus-workspace {
+    display: block !important;
+  }
+
+  .assembly-stage {
+    height: 320pt !important;
+    margin-bottom: 16pt !important;
+    break-inside: avoid !important;
+  }
+
+  .assembly-guidance {
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  .assembly-overview-dialog {
+    display: none !important;
+  }
+}

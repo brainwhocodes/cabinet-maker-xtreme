@@ -1,0 +1,335 @@
+// Base CSS & Resets
+@use "tokens" as t;
+
+:root {
+  --color-primary: #{t.$drafting-blue};
+  --color-primary-deep: #{t.$drafting-blue-deep};
+  --color-primary-light: #{t.$drafting-blue-light};
+  --color-accent: #{t.$safety-orange};
+  --color-accent-light: #{t.$safety-orange-light};
+  --color-bg: #{t.$cool-field};
+  --color-surface: #{t.$surface};
+  --color-surface-muted: #{t.$surface-muted};
+  --color-surface-hover: #{t.$surface-hover};
+  --color-text: #{t.$graphite};
+  --color-text-muted: #{t.$graphite-muted};
+  --color-line: #{t.$line};
+  --color-line-strong: #{t.$line-strong};
+  --color-canvas-bg: #{t.$canvas-bg};
+  --color-success: #{t.$success};
+  --color-success-light: #{t.$success-light};
+  --color-danger: #{t.$danger};
+  --color-danger-light: #{t.$danger-light};
+  --color-warning: #{t.$warning};
+  --color-warning-light: #{t.$warning-light};
+  --font-display: #{t.$font-family-display};
+  --font-body: #{t.$font-family-body};
+  --font-mono: #{t.$font-family-mono};
+  --radius-sm: #{t.$radius-sm};
+  --radius-md: #{t.$radius-md};
+  --radius-lg: #{t.$radius-lg};
+  --shadow-floating: #{t.$shadow-floating};
+  --shadow-modal: #{t.$shadow-modal};
+}
+
+html {
+  color-scheme: light;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+// Focus visible styles
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+// Typography headings
+h1, h2, h3, h4, h5, h6, .title, .subtitle {
+  font-family: var(--font-display);
+  color: var(--color-text);
+  letter-spacing: -0.015em;
+  font-weight: 650;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: 1.125rem;
+  line-height: 1.35;
+}
+
+// Numbers & Dimensions: Tabular Figures
+.tabular-nums, .dimension, .measurement, .price-display, .step-counter {
+  font-variant-numeric: tabular-nums;
+}
+
+// Accessible skip-link
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  padding: 8px 16px;
+  z-index: 10000;
+  transition: top 0.2s ease;
+  border-radius: 0 0 4px 4px;
+  font-weight: 600;
+
+  &:focus {
+    top: 0;
+  }
+}
+
+// Bulma theme alignment. Bulma is loaded as precompiled CSS, so project tokens
+// own the final semantic color treatment.
+a {
+  color: var(--color-primary-deep);
+}
+
+.has-text-grey,
+.has-text-grey-dark,
+.has-text-grey-light {
+  color: var(--color-text-muted) !important;
+}
+
+.input,
+.textarea,
+.select select,
+.button.is-static {
+  background-color: var(--color-surface) !important;
+  border-color: var(--color-line-strong) !important;
+  color: var(--color-text) !important;
+  box-shadow: none !important;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-text-muted) !important;
+  opacity: 1;
+}
+
+.input:hover,
+.textarea:hover,
+.select select:hover {
+  border-color: var(--color-primary) !important;
+}
+
+.input:focus,
+.textarea:focus,
+.select select:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px var(--color-primary-light) !important;
+}
+
+.select:not(.is-multiple, .is-loading)::after {
+  border-color: var(--color-primary-deep) !important;
+}
+
+.has-text-success {
+  color: var(--color-success) !important;
+}
+
+.has-text-danger {
+  color: var(--color-danger) !important;
+}
+
+.has-text-warning {
+  color: var(--color-warning) !important;
+}
+
+.tag.is-success.is-light:not(body) {
+  background-color: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.tag.is-danger.is-light:not(body) {
+  background-color: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.tag.is-warning.is-light:not(body) {
+  background-color: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+
+.button:not(.is-primary, .is-danger, .is-success, .is-warning, .is-link, .is-ghost) {
+  background-color: var(--color-surface);
+  border-color: var(--color-line-strong);
+  color: var(--color-text);
+}
+
+.button:not(.is-primary, .is-danger, .is-success, .is-warning, .is-link, .is-ghost):hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  color: var(--color-primary-deep);
+}
+
+.button.is-ghost {
+  background-color: transparent;
+  color: var(--color-primary-deep);
+}
+
+.button.is-link,
+.button.is-link.is-outlined {
+  border-color: var(--color-primary);
+  color: var(--color-primary-deep);
+}
+
+.button.is-link:not(.is-outlined) {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.button.is-danger {
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-surface);
+}
+
+.button.is-success {
+  background-color: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-surface);
+}
+
+.button.is-warning {
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-surface);
+}
+
+.button[disabled],
+.button.is-static {
+  background-color: var(--color-surface-muted) !important;
+  border-color: var(--color-line-strong) !important;
+  color: var(--color-text-muted) !important;
+  opacity: 1;
+}
+
+.button.is-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.button.is-primary:hover,
+.button.is-primary:focus-visible {
+  background-color: var(--color-primary-deep);
+  border-color: var(--color-primary-deep);
+  color: var(--color-surface);
+}
+
+.button.is-primary.is-outlined {
+  background-color: transparent;
+  border-color: var(--color-primary);
+  color: var(--color-primary-deep);
+}
+
+.button.is-primary.is-outlined:hover {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.has-background-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.has-background-primary-light,
+.has-background-link-light {
+  background-color: var(--color-primary-light) !important;
+}
+
+.has-text-primary,
+.has-text-link {
+  color: var(--color-primary-deep) !important;
+}
+
+.tag.is-primary:not(body) {
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+.tag.is-primary.is-light:not(body) {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-deep);
+}
+
+.progress.is-primary::-webkit-progress-value {
+  background-color: var(--color-primary);
+}
+
+.progress.is-primary::-moz-progress-bar {
+  background-color: var(--color-primary);
+}
+
+.planner-canvas-container canvas,
+.assembly-diagram-wrapper canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.planner-layout > nav,
+.assembly-layout > header,
+.bom-layout > header {
+  gap: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.planner-layout main {
+  min-width: 0;
+  min-height: 0;
+}
+
+.step-article > div:first-child {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (width <= 1100px) {
+  .assembly-layout .columns {
+    display: block;
+  }
+
+  .assembly-layout .column {
+    width: 100%;
+  }
+}
+
+
+// Reduced Motion Accessibility
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

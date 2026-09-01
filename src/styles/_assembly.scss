@@ -1,0 +1,1257 @@
+@use "tokens" as t;
+
+.assembly-page-content {
+  --assembly-step-rail-layer: #{t.$z-toolbar - 1};
+
+  min-height: 100dvh;
+  background: t.$cool-field;
+  color: t.$graphite;
+}
+
+.assembly-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: t.$z-toolbar;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: t.$space-md;
+  width: 100%;
+  height: 60px;
+  min-height: 60px;
+  max-height: 60px;
+  padding: t.$space-sm t.$space-lg;
+  border-bottom: 1px solid t.$line;
+  background: t.$surface;
+  white-space: nowrap;
+}
+
+.assembly-toolbar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: t.$space-xs;
+  min-height: 44px;
+  color: t.$graphite;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    color: t.$drafting-blue;
+  }
+
+  &:focus-visible {
+    outline: 2px solid t.$drafting-blue;
+    outline-offset: 2px;
+    border-radius: t.$radius-md;
+  }
+}
+
+.assembly-toolbar-selector {
+  width: clamp(180px, 24vw, 300px);
+  min-width: 120px;
+}
+
+.assembly-toolbar-actions,
+.assembly-toolbar-desktop-actions {
+  display: flex;
+  align-items: center;
+  gap: t.$space-sm;
+}
+
+.assembly-toolbar-actions {
+  margin-left: auto;
+}
+
+.assembly-toolbar-more {
+  position: relative;
+  display: none;
+
+  summary {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid t.$line-strong;
+    border-radius: t.$radius-md;
+    background: t.$surface;
+    color: t.$graphite;
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:focus-visible {
+      outline: 2px solid t.$drafting-blue;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.assembly-toolbar-more-menu {
+  position: absolute;
+  top: calc(100% + t.$space-sm);
+  right: 0;
+  z-index: t.$z-dropdown;
+  width: 190px;
+  padding: t.$space-xs;
+  border-radius: t.$radius-md;
+  background: t.$surface;
+  box-shadow: t.$shadow-floating;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: t.$space-sm;
+    width: 100%;
+    min-height: 44px;
+    padding: t.$space-sm t.$space-md;
+    border: 0;
+    border-radius: t.$radius-sm;
+    background: transparent;
+    color: t.$graphite;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: t.$surface-hover;
+    }
+
+    &:focus-visible {
+      outline: 2px solid t.$drafting-blue;
+      outline-offset: -2px;
+    }
+
+    &:disabled {
+      color: t.$graphite-muted;
+      cursor: wait;
+    }
+  }
+}
+
+.assembly-focus-main {
+  width: min(100%, 1600px);
+  margin: 0 auto;
+  padding: 0 t.$space-lg t.$space-xl;
+}
+
+.assembly-step-rail {
+  position: sticky;
+  top: 60px;
+  z-index: var(--assembly-step-rail-layer);
+  padding: t.$space-sm 0;
+  border-bottom: 1px solid t.$line;
+  background: t.$cool-field;
+
+  ol {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: t.$space-sm;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.assembly-step-rail-button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: t.$space-sm;
+  width: 100%;
+  min-height: 76px;
+  padding: t.$space-sm;
+  border: 1px solid transparent;
+  border-radius: t.$radius-md;
+  background: transparent;
+  color: t.$graphite-muted;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color t.$transition-base,
+    background-color t.$transition-base,
+    color t.$transition-base;
+
+  &:hover {
+    background: t.$surface-hover;
+    color: t.$graphite;
+  }
+
+  &:focus-visible {
+    outline: 2px solid t.$drafting-blue;
+    outline-offset: 2px;
+  }
+
+  &.is-active {
+    border-color: t.$drafting-blue;
+    background: t.$surface;
+    color: t.$graphite;
+  }
+
+  &.is-complete {
+    color: t.$graphite;
+  }
+
+  &.is-complete .assembly-step-rail-number {
+    border-color: t.$success;
+    background: t.$success;
+    color: t.$surface;
+  }
+}
+
+.assembly-step-rail-number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid t.$line-strong;
+  border-radius: t.$radius-full;
+  background: t.$surface;
+  color: t.$graphite;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  .is-active & {
+    border-color: t.$drafting-blue;
+    background: t.$drafting-blue;
+    color: t.$surface;
+  }
+}
+
+.assembly-step-rail-title {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: pretty;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.assembly-focus-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(340px, 0.8fr);
+  align-items: start;
+  gap: t.$space-lg;
+  padding-top: t.$space-lg;
+}
+
+.assembly-stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  height: clamp(420px, calc(100dvh - 210px), 720px);
+  overflow: hidden;
+  border: 1px solid t.$line-strong;
+  border-radius: t.$radius-lg;
+  background: t.$surface;
+}
+
+.assembly-stage-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: t.$space-sm;
+  min-height: 52px;
+  padding: t.$space-sm t.$space-md;
+  border-bottom: 1px solid t.$line;
+  background: t.$surface;
+}
+
+.assembly-stage-mode,
+.assembly-stage-actions {
+  display: flex;
+  align-items: center;
+  gap: t.$space-xs;
+}
+
+.assembly-stage-mode {
+  min-width: 0;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid t.$line-strong;
+  border-radius: t.$radius-full;
+  background: t.$surface-muted;
+
+  button {
+    min-height: 36px;
+    padding: t.$space-xs t.$space-md;
+    border: 0;
+    border-radius: t.$radius-full;
+    background: transparent;
+    color: t.$graphite-muted;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &[aria-pressed="true"] {
+      background: t.$surface;
+      color: t.$drafting-blue-deep;
+    }
+
+    &:focus-visible {
+      outline: 2px solid t.$drafting-blue;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.assembly-stage-viewport {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: t.$surface;
+}
+
+.assembly-line-diagram-main,
+.assembly-diagram-wrapper {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.assembly-cad-sheet {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: t.$space-sm;
+  width: 100%;
+  height: 100%;
+  padding: t.$space-sm;
+  background: t.$cool-field;
+}
+
+.assembly-cad-view-selector {
+  display: none;
+}
+
+.assembly-cad-view-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(180px, 0.9fr);
+  gap: t.$space-sm;
+  min-height: 0;
+}
+
+.assembly-cad-secondary-views {
+  display: grid;
+  grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+  gap: t.$space-sm;
+  min-width: 0;
+  min-height: 0;
+}
+
+.assembly-cad-view {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid t.$line;
+  border-radius: t.$radius-sm;
+  background: t.$surface;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-sm;
+    min-height: 28px;
+    padding: 4px t.$space-sm;
+    border-top: 1px solid t.$line;
+    background: t.$cool-field;
+    color: t.$graphite;
+    font-size: 0.7rem;
+    line-height: 1.2;
+
+    strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: t.$graphite-muted;
+      font-family: t.$font-family-mono;
+      font-size: 0.65rem;
+    }
+  }
+}
+
+.assembly-cad-title-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: t.$space-lg;
+  min-height: 40px;
+  padding: 5px t.$space-sm;
+  border: 1px solid t.$line;
+  background: t.$surface;
+
+  > div {
+    min-width: 0;
+
+    strong,
+    span {
+      display: block;
+    }
+
+    strong {
+      overflow: hidden;
+      color: t.$graphite;
+      font-family: t.$font-family-display;
+      font-size: 0.75rem;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: t.$graphite-muted;
+      font-family: t.$font-family-mono;
+      font-size: 0.65rem;
+    }
+  }
+
+  dl {
+    display: flex;
+    gap: t.$space-lg;
+    margin: 0;
+  }
+
+  dl > div {
+    min-width: 72px;
+  }
+
+  dt,
+  dd {
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  dt {
+    color: t.$graphite-muted;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  dd {
+    color: t.$graphite;
+    font-family: t.$font-family-mono;
+    font-size: 0.65rem;
+  }
+}
+
+.assembly-cad-sheet.is-thumbnail {
+  display: block;
+  padding: 0;
+  background: transparent;
+
+  .assembly-cad-view-grid,
+  .assembly-cad-view {
+    width: 100%;
+    height: 100%;
+  }
+
+  .assembly-cad-view-grid {
+    display: block;
+  }
+
+  .assembly-cad-view {
+    border: 0;
+    background: transparent;
+  }
+
+  figcaption {
+    display: none;
+  }
+}
+
+.assembly-diagram-wrapper {
+  position: relative;
+  overflow: hidden;
+  background: t.$canvas-bg;
+}
+
+.assembly-hotspot {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid t.$surface;
+  border-radius: t.$radius-full;
+  background: t.$graphite;
+  color: t.$surface;
+  font: 700 0.9rem/1 t.$font-family-body;
+  cursor: pointer;
+
+  &:hover {
+    background: t.$drafting-blue-deep;
+  }
+
+  &:focus-visible {
+    outline: 3px solid t.$surface;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px t.$graphite;
+  }
+}
+
+.assembly-guidance {
+  min-width: 0;
+  padding: t.$space-xl;
+  border: 1px solid t.$line;
+  border-radius: t.$radius-lg;
+  background: t.$surface;
+  color: t.$graphite;
+  font-size: 1rem;
+  line-height: 1.6;
+
+  h1,
+  h2,
+  p,
+  ol,
+  ul {
+    margin-top: 0;
+  }
+
+  h1,
+  h2 {
+    color: t.$graphite;
+    text-wrap: balance;
+  }
+
+  h1 {
+    margin-bottom: 0;
+    font-family: t.$font-family-display;
+    font-size: 1.35rem;
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+
+  h2 {
+    margin-bottom: t.$space-sm;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+}
+
+.assembly-guidance-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: t.$space-md;
+  margin-bottom: t.$space-lg;
+  padding-bottom: t.$space-lg;
+  border-bottom: 1px solid t.$line;
+
+  p {
+    margin-bottom: t.$space-xs;
+    color: t.$graphite-muted;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.assembly-helper-image {
+  width: 160px;
+  max-width: 160px;
+
+  .helper-character-image {
+    width: 160px !important;
+    max-height: 160px;
+    object-fit: contain;
+  }
+}
+
+.assembly-guidance-actions {
+  margin-bottom: t.$space-lg;
+
+  ol {
+    display: grid;
+    gap: t.$space-md;
+    margin-bottom: 0;
+    padding-left: 1.75rem;
+  }
+
+  li {
+    padding-left: t.$space-xs;
+    text-wrap: pretty;
+  }
+
+  li::marker {
+    color: t.$drafting-blue-deep;
+    font-weight: 700;
+  }
+}
+
+.assembly-guidance-callouts {
+  margin-bottom: t.$space-lg;
+  padding: t.$space-md;
+  border: 1px solid t.$line-strong;
+  border-radius: t.$radius-md;
+  background: t.$cool-field;
+
+  ol {
+    display: grid;
+    gap: t.$space-xs;
+    margin-bottom: 0;
+    padding-left: 1.6rem;
+  }
+
+  li::marker {
+    color: t.$graphite;
+    font-weight: 700;
+  }
+}
+
+.assembly-guidance-requirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: t.$space-lg;
+  margin-bottom: t.$space-lg;
+  padding-block: t.$space-lg;
+  border-block: 1px solid t.$line;
+}
+
+.assembly-guidance-requirement {
+  ul {
+    margin-bottom: 0;
+    padding-left: 1.1rem;
+  }
+
+  li {
+    margin-bottom: t.$space-xs;
+  }
+}
+
+.assembly-guidance-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: t.$space-sm;
+  margin-bottom: t.$space-md;
+  padding: t.$space-md;
+  border: 1px solid;
+  border-radius: t.$radius-md;
+
+  h2,
+  p {
+    margin-bottom: 0;
+  }
+
+  &.is-safety {
+    border-color: t.$safety-orange;
+    background: t.$safety-orange-light;
+  }
+
+  &.is-quality {
+    border-color: t.$drafting-blue;
+    background: t.$drafting-blue-light;
+  }
+}
+
+.assembly-all-parts {
+  margin-block: t.$space-lg;
+  border-block: 1px solid t.$line;
+
+  > summary {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    color: t.$graphite;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid t.$drafting-blue;
+      outline-offset: 2px;
+    }
+  }
+}
+
+.assembly-part-legend {
+  padding: 0 0 t.$space-lg;
+}
+
+.assembly-part-legend-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: t.$space-sm;
+  margin-bottom: t.$space-sm;
+
+  h3 {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.assembly-part-legend-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: t.$space-sm;
+}
+
+.assembly-part-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: t.$space-sm;
+  min-height: 48px;
+  padding: t.$space-sm;
+  border: 1px solid t.$line;
+  border-radius: t.$radius-md;
+  background: t.$surface;
+  color: t.$graphite;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color t.$transition-fast,
+    background-color t.$transition-fast;
+
+  &:not(:disabled):hover,
+  &:not(:disabled):focus-visible {
+    border-color: t.$drafting-blue;
+    background: t.$drafting-blue-light;
+  }
+
+  &:focus-visible {
+    outline: 2px solid t.$drafting-blue;
+    outline-offset: 2px;
+  }
+
+  &.is-highlighted {
+    border-color: t.$safety-orange;
+    background: t.$safety-orange-light;
+  }
+
+  &.is-active .assembly-part-dot {
+    border-color: t.$drafting-blue;
+    background: t.$drafting-blue;
+  }
+
+  &.is-complete .assembly-part-dot {
+    border-color: t.$line-strong;
+    background: t.$surface-muted;
+  }
+
+  &.is-highlighted .assembly-part-dot {
+    border-color: t.$safety-orange;
+    background: t.$safety-orange;
+  }
+
+  &:disabled {
+    opacity: 0.52;
+    cursor: not-allowed;
+  }
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    font-family: t.$font-family-mono;
+    font-size: 0.7rem;
+  }
+
+  small {
+    margin-top: 2px;
+    color: t.$graphite-muted;
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+}
+
+.assembly-part-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border: 1px solid t.$line-strong;
+  border-radius: t.$radius-full;
+  background: t.$surface;
+  flex: 0 0 auto;
+}
+
+.assembly-guidance-complete {
+  width: 100%;
+  margin-bottom: t.$space-md;
+}
+
+.assembly-guidance-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: t.$space-sm;
+  padding-top: t.$space-lg;
+  border-top: 1px solid t.$line;
+}
+
+.assembly-overview-dialog {
+  width: min(1120px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: t.$radius-lg;
+  background: transparent;
+  color: t.$graphite;
+
+  &::backdrop {
+    background: rgb(23 33 43 / 64%);
+  }
+
+  &.is-fallback {
+    position: fixed;
+    inset: 0;
+    z-index: t.$z-modal;
+    display: grid;
+    place-items: center;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    background: rgb(23 33 43 / 64%);
+  }
+}
+
+.assembly-overview-dialog-surface {
+  width: min(1120px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: t.$space-xl;
+  border-radius: t.$radius-lg;
+  background: t.$surface;
+  box-shadow: t.$shadow-modal;
+
+  > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: t.$space-lg;
+    margin-bottom: t.$space-lg;
+
+    p,
+    h2 {
+      margin: 0;
+    }
+
+    p {
+      color: t.$graphite-muted;
+      font-size: 0.875rem;
+    }
+
+    h2 {
+      font-family: t.$font-family-display;
+      font-size: 1.5rem;
+    }
+  }
+}
+
+.assembly-storyboard {
+  margin: 0;
+}
+
+.assembly-storyboard-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: t.$space-xl;
+  margin-bottom: t.$space-lg;
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    font-size: 1.15rem;
+  }
+
+  p {
+    max-width: 52ch;
+    color: t.$graphite-muted;
+    font-size: 0.875rem;
+  }
+}
+
+.assembly-manual-kicker {
+  display: block;
+  margin-bottom: 2px;
+  color: t.$graphite-muted;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.assembly-storyboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: t.$space-md;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assembly-storyboard-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: 120px auto;
+  gap: t.$space-sm;
+  width: 100%;
+  min-height: 168px;
+  padding: t.$space-sm;
+  border: 1px solid t.$line-strong;
+  border-radius: t.$radius-md;
+  background: t.$surface;
+  color: t.$graphite;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: t.$drafting-blue;
+    background: t.$drafting-blue-light;
+  }
+
+  &:focus-visible {
+    outline: 2px solid t.$drafting-blue;
+    outline-offset: 2px;
+  }
+
+  &.is-active {
+    border: 2px solid t.$drafting-blue;
+  }
+
+  strong {
+    padding-inline: 2px;
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+}
+
+.assembly-storyboard-number {
+  position: absolute;
+  top: t.$space-sm;
+  left: t.$space-sm;
+  z-index: t.$z-base;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: t.$radius-full;
+  background: t.$graphite;
+  color: t.$surface;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+@media (width <= 900px) {
+  .assembly-step-rail {
+    margin-inline: -#{t.$space-lg};
+    padding-inline: t.$space-lg;
+
+    ol {
+      display: flex;
+      gap: t.$space-sm;
+      overflow-x: auto;
+      overscroll-behavior-inline: contain;
+      scrollbar-gutter: stable;
+    }
+
+    li {
+      flex: 0 0 210px;
+    }
+  }
+
+  .assembly-step-rail-button {
+    min-height: 68px;
+  }
+
+  .assembly-focus-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: t.$space-md;
+  }
+
+  .assembly-stage {
+    height: clamp(300px, 46dvh, 420px);
+  }
+
+  .assembly-storyboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 600px) {
+  .assembly-toolbar {
+    gap: t.$space-xs;
+    padding-inline: t.$space-sm;
+  }
+
+  .assembly-toolbar-back {
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .assembly-toolbar-back-label,
+  .assembly-toolbar-overview-label,
+  .assembly-toolbar-desktop-actions {
+    display: none;
+  }
+
+  .assembly-toolbar-selector {
+    width: auto;
+    min-width: 120px;
+    flex: 1 1 auto;
+  }
+
+  .assembly-toolbar-actions {
+    gap: t.$space-xs;
+    margin-left: 0;
+  }
+
+  .assembly-toolbar-actions > .button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+
+    .icon {
+      margin: 0 !important;
+    }
+  }
+
+  .assembly-toolbar-more {
+    display: block;
+  }
+
+  .assembly-focus-main {
+    padding: 0 t.$space-md t.$space-lg;
+  }
+
+  .assembly-step-rail {
+    margin-inline: -#{t.$space-md};
+    padding-inline: t.$space-md;
+
+    li {
+      flex-basis: 184px;
+    }
+  }
+
+  .assembly-step-rail-button {
+    min-height: 64px;
+  }
+
+  .assembly-focus-workspace {
+    padding-top: t.$space-md;
+  }
+
+  .assembly-stage {
+    height: clamp(280px, 42dvh, 360px);
+  }
+
+  .assembly-stage-controls {
+    align-items: stretch;
+    flex-wrap: wrap;
+    padding: t.$space-xs t.$space-sm;
+  }
+
+  .assembly-stage-mode {
+    flex: 1 1 auto;
+
+    button {
+      flex: 1 1 auto;
+      padding-inline: t.$space-sm;
+    }
+  }
+
+  .assembly-stage-actions {
+    margin-left: auto;
+
+    .button {
+      min-height: 36px;
+      padding-inline: t.$space-sm;
+      font-size: 0.75rem;
+    }
+  }
+
+  .assembly-cad-sheet.is-full-sheet {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: t.$space-xs;
+    padding: 6px;
+  }
+
+  .assembly-cad-view-selector {
+    display: flex;
+    gap: t.$space-xs;
+    min-width: 0;
+    margin: 0;
+    padding: 0 0 2px;
+    overflow-x: auto;
+    border: 0;
+
+    button {
+      min-height: 32px;
+      padding: 4px t.$space-sm;
+      border: 1px solid t.$line-strong;
+      border-radius: t.$radius-sm;
+      background: t.$surface;
+      color: t.$graphite-muted;
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      flex: 0 0 auto;
+
+      &[aria-pressed="true"] {
+        border-color: t.$drafting-blue;
+        background: t.$drafting-blue-light;
+        color: t.$drafting-blue-deep;
+      }
+
+      &:focus-visible {
+        outline: 2px solid t.$drafting-blue;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  .assembly-cad-view-grid {
+    display: block;
+    min-height: 0;
+  }
+
+  .assembly-cad-secondary-views {
+    display: contents;
+  }
+
+  .assembly-cad-view {
+    display: none;
+    width: 100%;
+    height: 100%;
+
+    &.is-selected {
+      display: grid;
+    }
+
+    figcaption {
+      min-height: 24px;
+      padding-block: 3px;
+    }
+  }
+
+  .assembly-cad-title-block {
+    min-height: 34px;
+    padding-block: 3px;
+
+    dl {
+      gap: t.$space-sm;
+    }
+
+    dl > div {
+      min-width: auto;
+    }
+
+    dl > div:nth-child(2) {
+      display: none;
+    }
+  }
+
+  .assembly-guidance {
+    padding: t.$space-lg;
+  }
+
+  .assembly-guidance-header {
+    grid-template-columns: minmax(0, 1fr) 128px;
+  }
+
+  .assembly-helper-image {
+    width: 128px;
+    max-width: 128px;
+
+    .helper-character-image {
+      width: 128px !important;
+      max-height: 128px;
+    }
+  }
+
+  .assembly-guidance-requirements {
+    grid-template-columns: 1fr;
+  }
+
+  .assembly-guidance-navigation .button {
+    min-height: 44px;
+    padding-inline: t.$space-sm;
+  }
+
+  .assembly-overview-dialog-surface {
+    padding: t.$space-lg;
+
+    > header {
+      align-items: flex-start;
+    }
+  }
+
+  .assembly-storyboard-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: t.$space-sm;
+  }
+
+  .assembly-storyboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.assembly-empty-state {
+  display: grid;
+  gap: t.$space-md;
+  place-items: start;
+  width: min(560px, calc(100% - #{t.$space-xl}));
+  margin: t.$space-4xl auto;
+  padding: t.$space-xl;
+  border-radius: t.$radius-lg;
+  background: t.$surface;
+  color: t.$graphite;
+}
+
+.assembly-empty-state h1,
+.assembly-empty-state p {
+  margin: 0;
+}
+
+.assembly-related-built-ins {
+  margin: t.$space-md;
+  padding: t.$space-md;
+  border-top: 1px solid t.$line;
+  color: t.$graphite;
+  font-size: 0.875rem;
+}
+
+.assembly-related-built-ins h2 {
+  margin-bottom: t.$space-sm;
+  font-size: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assembly-step-rail-button,
+  .assembly-part-legend-item {
+    transition: none;
+  }
+}
