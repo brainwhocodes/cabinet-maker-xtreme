@@ -939,12 +939,34 @@ function createAssemblySteps(
   spec: ResolvedCabinetSpec,
   parts: CabinetPartMeshSpec[],
 ): CabinetAssemblyStepDef[] {
+  const carcassPartIds: string[] = [];
+  const backPartIds: string[] = [];
+  const topPartIds: string[] = [];
   const shelfPartIds: string[] = [];
   const shelfHighlightIds: string[] = [];
   const frontPartIds: string[] = [];
   const hardwareHighlightIds: string[] = [];
-  const topPartIds: string[] = [];
   for (const part of parts) {
+    if (
+      part.id === 'panel_side_left' ||
+      part.id === 'panel_side_right' ||
+      part.id === 'panel_bottom_deck' ||
+      part.id === 'toe_kick_structure' ||
+      part.id.startsWith('corner_panel_') ||
+      part.id.startsWith('corner_bottom_')
+    ) {
+      carcassPartIds.push(part.id);
+    }
+    if (part.id === 'panel_back_board' || part.id.startsWith('corner_back_')) {
+      backPartIds.push(part.id);
+    }
+    if (
+      part.id.startsWith('stretcher_top_') ||
+      part.id === 'panel_top_deck' ||
+      part.id.startsWith('corner_top_')
+    ) {
+      topPartIds.push(part.id);
+    }
     if (part.category === 'shelf' || part.category === 'shelf_hardware') {
       shelfPartIds.push(part.id);
       if (part.category === 'shelf') shelfHighlightIds.push(part.id);
@@ -959,10 +981,12 @@ function createAssemblySteps(
       frontPartIds.push(part.id);
       if (part.category === 'hardware') hardwareHighlightIds.push(part.id);
     }
-    if (part.id.startsWith('stretcher_top_') || part.id === 'panel_top_deck') {
-      topPartIds.push(part.id);
-    }
   }
+
+  const stepOneTwoCarcassIds =
+    spec.family === 'lazy_susan_corner'
+      ? carcassPartIds.filter((id) => id !== 'toe_kick_structure')
+      : ['panel_side_left', 'panel_side_right', 'panel_bottom_deck'];
 
   return [
     step(
@@ -973,8 +997,10 @@ function createAssemblySteps(
       `Verify the side panels are ${spec.heightInches}" high and ${spec.depthInches}" deep.`,
       ['Tape Measure', 'Work Gloves', 'Utility Knife'],
       ['Cardboard Protector Surface', 'Part Verification Checklist'],
-      ['panel_side_left', 'panel_side_right', 'panel_bottom_deck'],
-      ['panel_bottom_deck'],
+      stepOneTwoCarcassIds,
+      spec.family === 'lazy_susan_corner'
+        ? stepOneTwoCarcassIds.slice(0, 1)
+        : ['panel_bottom_deck'],
       'measuring',
     ),
     step(
@@ -985,8 +1011,10 @@ function createAssemblySteps(
       'Confirm the bottom deck is square to both side panels.',
       ['Cordless Drill', '#2 Phillips Driver Bit', 'Carpenter Square'],
       ['Wood Glue (PVA)', '#8 x 1-1/4" Cabinet Assembly Screws'],
-      ['panel_side_left', 'panel_side_right', 'panel_bottom_deck'],
-      ['panel_side_left', 'panel_side_right'],
+      stepOneTwoCarcassIds,
+      spec.family === 'lazy_susan_corner'
+        ? stepOneTwoCarcassIds.slice(0, 2)
+        : ['panel_side_left', 'panel_side_right'],
       'drill_safety',
     ),
     step(
@@ -1011,8 +1039,8 @@ function createAssemblySteps(
       'Sight both side panels and confirm there is no bow or twist.',
       ['Cordless Drill or Brad Nailer', 'Tape Measure'],
       ['3/4" Backer Fasteners'],
-      ['panel_back_board'],
-      ['panel_back_board'],
+      backPartIds.length > 0 ? backPartIds : ['panel_back_board'],
+      backPartIds.slice(0, 1),
       'check_square',
     ),
     step(

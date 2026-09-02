@@ -13,28 +13,38 @@ export interface AssemblyPartCallout {
 }
 
 export function splitAssemblyInstruction(text: string): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
   const instructions: string[] = [];
-  for (const match of text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? []) {
+  const matches =
+    trimmed.match(/(?:[^.!?]|(?<=\d)\.(?=\d))+[.!?]+(?=\s|$)|(?:[^.!?]|(?<=\d)\.(?=\d))+$/g) ?? [];
+  for (const match of matches) {
     const instruction = match.trim();
     if (instruction) instructions.push(instruction);
   }
-  return instructions;
+  return instructions.length > 0 ? instructions : [trimmed];
 }
 
 function getIntroductionStep(part: CabinetPartMeshSpec): number {
   if (
     part.id === 'panel_side_left' ||
     part.id === 'panel_side_right' ||
-    part.id === 'panel_bottom_deck'
+    part.id === 'panel_bottom_deck' ||
+    part.id.startsWith('corner_panel_') ||
+    part.id.startsWith('corner_bottom_')
   ) {
     return 2;
   }
 
-  if (part.id.startsWith('stretcher_top_') || part.id === 'panel_top_deck') {
+  if (
+    part.id.startsWith('stretcher_top_') ||
+    part.id === 'panel_top_deck' ||
+    part.id.startsWith('corner_top_')
+  ) {
     return 3;
   }
 
-  if (part.id === 'panel_back_board') {
+  if (part.id === 'panel_back_board' || part.id.startsWith('corner_back_')) {
     return 4;
   }
 
@@ -46,7 +56,11 @@ function getIntroductionStep(part: CabinetPartMeshSpec): number {
     return 5;
   }
 
-  if (part.category === 'face_frame' || part.category === 'finished_end') {
+  if (
+    part.category === 'face_frame' ||
+    part.category === 'finished_end' ||
+    part.category === 'toe_kick'
+  ) {
     return 6;
   }
 
