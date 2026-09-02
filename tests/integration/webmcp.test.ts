@@ -25,6 +25,10 @@ const EXPECTED_TOOL_NAMES = [
   'align_distribute_scene_selection',
   'set_scene_inspection',
   'complete_built_in_runs',
+  'get_sheet_nesting',
+  'export_cnc_dxf',
+  'get_clearance_clashes',
+  'evaluate_work_triangle',
 ];
 
 function tool(name: string) {
@@ -247,10 +251,32 @@ describe('WebMCP clean-cutover tool contract', () => {
     expect(state.project.appliances).toEqual([]);
     expect(state.historyPast).toEqual([]);
   });
-
   it('returns an explicit screenshot error when no planner renderer is registered', async () => {
     await expect(
       tool('capture_design_screenshot').execute({ include_transient_preview: false }),
     ).rejects.toThrow('No active planner renderer');
+  });
+
+  it('calculates 2D sheet nesting and exports CNC DXF content through WebMCP', async () => {
+    const nesting = await execute('get_sheet_nesting');
+    expect(nesting.totalSheets).toBeGreaterThan(0);
+    expect(nesting.overallYieldPercentage).toBeGreaterThan(0);
+
+    const dxf = await execute('export_cnc_dxf', { sheet_index: 1 });
+    expect(dxf.sheetIndex).toBe(1);
+    expect(dxf.dxfString).toContain('SECTION');
+    expect(dxf.dxfString).toContain('OUTLINE_CUT');
+  });
+
+  it('evaluates dynamic clearance clashes and NKBA work triangle through WebMCP', async () => {
+    const clashes = await execute('get_clearance_clashes');
+    expect(clashes).toHaveProperty('clashCount');
+    expect(Array.isArray(clashes.clashes)).toBe(true);
+
+    const triangle = await execute('evaluate_work_triangle');
+    expect(triangle).toHaveProperty('sinkPresent');
+    expect(triangle).toHaveProperty('fridgePresent');
+    expect(triangle).toHaveProperty('cooktopPresent');
+    expect(triangle).toHaveProperty('nkbaStandard');
   });
 });

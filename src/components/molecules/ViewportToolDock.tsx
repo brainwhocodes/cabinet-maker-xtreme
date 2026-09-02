@@ -1,8 +1,8 @@
 'use client';
 
+import { captureStudioScreenshot } from '@/rendering/screenshots/capture-canvas';
 import { useProjectStore } from '@/state/project-store';
 import { SolarIcon } from '../atoms/SolarIcon';
-
 export interface ViewportToolDockProps {
   onOpenAutoFit?: () => void;
 }
@@ -82,6 +82,19 @@ export function ViewportToolDock({ onOpenAutoFit }: ViewportToolDockProps) {
         <span className="planner-dock-tool-label">Zoom</span>
       </button>
 
+      <button
+        type="button"
+        className={`planner-dock-tool-btn ${navigationTool === 'walk' ? 'is-active' : ''}`}
+        onClick={() => setNavigationTool(navigationTool === 'walk' ? 'select' : 'walk')}
+        title="Walkthrough Eye-Level Mode (Hotkey: W, WASD to walk)"
+        aria-label="First-person walkthrough mode"
+        aria-pressed={navigationTool === 'walk'}
+      >
+        <span className="planner-dock-tool-icon">
+          <SolarIcon name="solar:running-2-linear" size={18} />
+        </span>
+        <span className="planner-dock-tool-label">Walk</span>
+      </button>
       <span className="planner-dock-separator" aria-hidden="true" />
 
       <button
@@ -125,6 +138,21 @@ export function ViewportToolDock({ onOpenAutoFit }: ViewportToolDockProps) {
           <SolarIcon name="solar:magnet-linear" size={18} />
         </span>
         <span className="planner-dock-tool-label">Snap</span>
+      </button>
+
+      <span className="planner-dock-separator" aria-hidden="true" />
+
+      <button
+        type="button"
+        className="planner-dock-tool-btn"
+        onClick={() => captureStudioScreenshot()}
+        title="Capture High-Res Viewport Screenshot"
+        aria-label="Export viewport screenshot"
+      >
+        <span className="planner-dock-tool-icon">
+          <SolarIcon name="solar:camera-linear" size={18} />
+        </span>
+        <span className="planner-dock-tool-label">Capture</span>
       </button>
     </div>
   );

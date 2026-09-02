@@ -129,7 +129,7 @@ export interface ProjectState {
   cameraPreset: CameraPreset;
   showDimensions: boolean;
   cameraTransitionToken: number;
-  navigationTool: 'select' | 'orbit' | 'pan' | 'zoom' | 'measure';
+  navigationTool: 'select' | 'orbit' | 'pan' | 'zoom' | 'measure' | 'walk';
   snapEnabled: boolean;
   canUndo: boolean;
   canRedo: boolean;
@@ -236,7 +236,7 @@ export interface ProjectState {
   isolateSelection(): void;
   showAllEntities(): void;
   toggleSceneLabels(): void;
-  setNavigationTool(tool: 'select' | 'orbit' | 'pan' | 'zoom' | 'measure'): void;
+  setNavigationTool(tool: 'select' | 'orbit' | 'pan' | 'zoom' | 'measure' | 'walk'): void;
   toggleSnap(): void;
   setMeasureMode(active: boolean): void;
   addMeasurementPoint(point: MeasurementPoint): SceneCommandResult;

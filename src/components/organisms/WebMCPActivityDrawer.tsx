@@ -16,7 +16,7 @@ export function WebMCPActivityDrawer() {
 
   return (
     <div
-      className="has-background-white"
+      className="webmcp-activity-drawer has-background-white"
       style={{
         position: 'fixed',
         bottom: 0,

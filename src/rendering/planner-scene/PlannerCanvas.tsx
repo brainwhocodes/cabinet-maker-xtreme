@@ -42,6 +42,8 @@ import {
   SHARED_UNIT_CYLINDER_GEOMETRY,
 } from '@/rendering/shared-geometries';
 import { type Measurement, useProjectStore } from '@/state/project-store';
+import { TransformManipulator } from './TransformManipulator';
+import { WalkthroughRig } from './WalkthroughRig';
 
 function CabinetMeshGroup({
   cabinet,
@@ -313,6 +315,9 @@ function CabinetMeshGroup({
         </>
       )}
 
+      {isSelected && navigationTool === 'select' && (
+        <TransformManipulator cabinet={cabinet} wall={wall} onStatus={onMoveStatus} />
+      )}
       {showLabel && (
         <Html
           position={[model.widthInches / 2, model.heightInches + 3, model.depthInches / 2]}
@@ -1155,6 +1160,7 @@ function SceneContent({
     sectionOffset,
     viewMode,
     showDimensions,
+    navigationTool,
   } = useProjectStore();
   const selectedCabinet = project.cabinets.find(
     (cabinet) => cabinet.id === primarySelectedEntityId,
@@ -1272,17 +1278,21 @@ function SceneContent({
         <MeasurementLine key={measurement.id} measurement={measurement} />
       ))}
 
-      <CameraRig
-        roomWidth={roomWidth}
-        roomHeight={roomHeight}
-        roomLength={roomLength}
-        activeWall={activeWall}
-        selectedWorldBounds={selectedWorldBounds}
-        selectedWall={selectedWall}
-        viewMode={viewMode}
-        controlsEnabled={scenePreview?.kind !== 'move'}
-        onOrbitChange={onOrbitChange}
-      />
+      {navigationTool === 'walk' ? (
+        <WalkthroughRig roomWidth={roomWidth} roomLength={roomLength} />
+      ) : (
+        <CameraRig
+          roomWidth={roomWidth}
+          roomHeight={roomHeight}
+          roomLength={roomLength}
+          activeWall={activeWall}
+          selectedWorldBounds={selectedWorldBounds}
+          selectedWall={selectedWall}
+          viewMode={viewMode}
+          controlsEnabled={scenePreview?.kind !== 'move'}
+          onOrbitChange={onOrbitChange}
+        />
+      )}
       <OrbitReticle visible={isOrbiting} position={orbitTarget} />
       <GizmoHelper alignment="bottom-left" margin={[80, 80]}>
         <GizmoViewport axisColors={['#EF4444', '#10B981', '#3B82F6']} labelColor="#FFFFFF" />
@@ -1533,6 +1543,48 @@ export function PlannerCanvas() {
         setStatus('Wall Elevation view');
         return;
       }
+      if (event.code === 'Numpad1') {
+        event.preventDefault();
+        liveState.setCameraPreset('wall');
+        liveState.setViewMode('elevation');
+        setStatus('Numpad 1: Front Elevation');
+        return;
+      }
+      if (event.code === 'Numpad3') {
+        event.preventDefault();
+        liveState.setCameraPreset('wall');
+        liveState.setViewMode('perspective');
+        setStatus('Numpad 3: Profile View');
+        return;
+      }
+      if (event.code === 'Numpad7') {
+        event.preventDefault();
+        liveState.setViewMode('top');
+        setStatus('Numpad 7: Top Blueprint View');
+        return;
+      }
+      if (event.code === 'Numpad5') {
+        event.preventDefault();
+        const next = liveState.viewMode === 'top' ? 'perspective' : 'top';
+        liveState.setViewMode(next);
+        setStatus(`Numpad 5: ${next === 'top' ? 'Top' : 'Perspective'} View`);
+        return;
+      }
+      if (event.code === 'NumpadDecimal') {
+        if (liveState.selectedEntityIds.length > 0) {
+          event.preventDefault();
+          liveState.setCameraPreset('selection');
+          setStatus('Focused on selection');
+          return;
+        }
+      }
+      if (key === 'w' && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        const next = liveState.navigationTool === 'walk' ? 'select' : 'walk';
+        liveState.setNavigationTool(next);
+        setStatus(next === 'walk' ? 'Walkthrough mode (WASD to walk)' : 'Select mode');
+        return;
+      }
       if ((key === 'v' || key === 's') && !event.ctrlKey && !event.metaKey) {
         event.preventDefault();
         liveState.setNavigationTool('select');
@@ -1645,6 +1697,48 @@ export function PlannerCanvas() {
             ? 'crosshair'
             : 'grab';
 
+  const [marqueeBox, setMarqueeBox] = useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
+  const marqueeStartRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
+
+  const handleContainerPointerDown = (e: React.PointerEvent) => {
+    if (navigationTool !== 'select') return;
+    if ((e.target as HTMLElement).tagName !== 'CANVAS') return;
+    marqueeStartRef.current = { x: e.clientX, y: e.clientY, active: false };
+  };
+
+  const handleContainerPointerMove = (e: React.PointerEvent) => {
+    const start = marqueeStartRef.current;
+    if (!start) return;
+    const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    if (dist > 8) {
+      start.active = true;
+      setMarqueeBox({
+        startX: start.x,
+        startY: start.y,
+        currentX: e.clientX,
+        currentY: e.clientY,
+      });
+    }
+  };
+
+  const handleContainerPointerUp = () => {
+    const start = marqueeStartRef.current;
+    if (start?.active && marqueeBox) {
+      const selected = project.cabinets.map((c) => c.id);
+      if (selected.length > 0) {
+        useProjectStore.getState().setSceneSelection(selected, selected[0]);
+        setStatus(`Selected ${selected.length} entities with marquee`);
+      }
+    }
+    marqueeStartRef.current = null;
+    setMarqueeBox(null);
+  };
+
   return (
     <section
       className="planner-canvas-container"
@@ -1658,7 +1752,26 @@ export function PlannerCanvas() {
         cursor: canvasCursor,
       }}
       aria-label="Interactive 3D planner canvas"
+      onPointerDown={handleContainerPointerDown}
+      onPointerMove={handleContainerPointerMove}
+      onPointerUp={handleContainerPointerUp}
     >
+      {marqueeBox && (
+        <div
+          className="planner-marquee-box"
+          style={{
+            position: 'fixed',
+            left: Math.min(marqueeBox.startX, marqueeBox.currentX),
+            top: Math.min(marqueeBox.startY, marqueeBox.currentY),
+            width: Math.abs(marqueeBox.currentX - marqueeBox.startX),
+            height: Math.abs(marqueeBox.currentY - marqueeBox.startY),
+            border: '1.5px dashed #38BDF8',
+            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}
+        />
+      )}
       <Canvas
         ref={canvasRef}
         camera={cameraConfig}

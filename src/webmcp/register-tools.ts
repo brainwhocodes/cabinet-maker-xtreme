@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { detectDynamicClashes } from '@/domain/architecture/clash-simulation';
 import {
   deriveAssemblyPartCallouts,
   splitAssemblyInstruction,
@@ -12,6 +13,8 @@ import { buildCabinetParts } from '@/domain/geometry/part-builder';
 import { inchesToSixteenths, sixteenthsToInches } from '@/domain/geometry/units';
 import { wallLocalToWorld } from '@/domain/geometry/wall-transform';
 import { generateAutoFitProposals } from '@/domain/layout/auto-fit';
+import { exportSheetToDxf } from '@/domain/manufacturing/dxf-exporter';
+import { type CutPart, nestCutParts } from '@/domain/manufacturing/nesting-engine';
 import { validateRoomProject } from '@/domain/validation/rules';
 import { getStructuredAgentGuidance } from '@/domain/webmcp/agent-guidance';
 import { captureStudioScreenshot } from '@/rendering/screenshots/capture-canvas';
@@ -650,6 +653,196 @@ export function getWebMCPTools(): WebMCPToolDefinition[] {
           .completeBuiltInRuns(wall_id, cabinet_ids, expected_revision);
         if (!result.ok) return commandPayload(result);
         return previewPayload(useProjectStore.getState().scenePreview);
+      },
+    ),
+    defineTool(
+      'get_sheet_nesting',
+      'Calculates 2D guillotine sheet nesting layout for cabinet carcass panels on standard plywood sheets.',
+      z.strictObject({
+        material: z.string().optional(),
+        sheet_width_inches: positive.optional(),
+        sheet_height_inches: positive.optional(),
+        kerf_inches: nonnegative.optional(),
+        trim_margin_inches: nonnegative.optional(),
+      }),
+      true,
+      ({ material, sheet_width_inches, sheet_height_inches, kerf_inches, trim_margin_inches }) => {
+        const project = useProjectStore.getState().project;
+        const parts: CutPart[] = [];
+        for (const cab of project.cabinets) {
+          const def = getCabinetDefinitionByCode(cab.definitionId);
+          if (!def) continue;
+          const spec = resolveCabinetSpec(def, cab);
+          const model = buildCabinetParts(spec);
+          for (const part of model.parts) {
+            if (part.category === 'hardware' || part.category === 'shelf_hardware') continue;
+            const isBacker = part.id === 'panel_back_board' || part.id.startsWith('corner_back_');
+            const mat = isBacker ? 'backer_1_4' : 'plywood_3_4';
+            const dims = [part.widthInches, part.heightInches, part.depthInches].sort(
+              (a, b) => b - a,
+            );
+            parts.push({
+              id: `${cab.id}-${part.id}`,
+              name: part.name,
+              cabinetCode: cab.definitionId,
+              width: Math.round(dims[1] * 100) / 100,
+              height: Math.round(dims[0] * 100) / 100,
+              material: mat,
+              grain: part.id.includes('side') ? 'lengthwise' : 'either',
+            });
+          }
+        }
+        return nestCutParts(parts, material, {
+          sheetWidth: sheet_width_inches ?? 48,
+          sheetHeight: sheet_height_inches ?? 96,
+          kerf: kerf_inches ?? 0.125,
+          trimMargin: trim_margin_inches ?? 0.5,
+        });
+      },
+    ),
+    defineTool(
+      'export_cnc_dxf',
+      'Generates AutoCAD R12/2000 ASCII DXF content for CNC router tables for a nested sheet.',
+      z.strictObject({
+        sheet_index: z.number().int().positive().default(1),
+        material: z.string().optional(),
+      }),
+      true,
+      ({ sheet_index, material }) => {
+        const project = useProjectStore.getState().project;
+        const parts: CutPart[] = [];
+        for (const cab of project.cabinets) {
+          const def = getCabinetDefinitionByCode(cab.definitionId);
+          if (!def) continue;
+          const spec = resolveCabinetSpec(def, cab);
+          const model = buildCabinetParts(spec);
+          for (const part of model.parts) {
+            if (part.category === 'hardware' || part.category === 'shelf_hardware') continue;
+            const isBacker = part.id === 'panel_back_board' || part.id.startsWith('corner_back_');
+            const mat = isBacker ? 'backer_1_4' : 'plywood_3_4';
+            const dims = [part.widthInches, part.heightInches, part.depthInches].sort(
+              (a, b) => b - a,
+            );
+            parts.push({
+              id: `${cab.id}-${part.id}`,
+              name: part.name,
+              cabinetCode: cab.definitionId,
+              width: Math.round(dims[1] * 100) / 100,
+              height: Math.round(dims[0] * 100) / 100,
+              material: mat,
+              grain: part.id.includes('side') ? 'lengthwise' : 'either',
+            });
+          }
+        }
+        const nesting = nestCutParts(parts, material);
+        const targetSheet =
+          nesting.sheets.find((s) => s.sheetIndex === sheet_index) ?? nesting.sheets[0];
+        if (!targetSheet) {
+          return { error: 'No sheets generated to export' };
+        }
+        return {
+          sheetIndex: targetSheet.sheetIndex,
+          material: targetSheet.material,
+          dxfString: exportSheetToDxf(targetSheet),
+        };
+      },
+    ),
+    defineTool(
+      'get_clearance_clashes',
+      'Evaluates 3D physical collisions and NKBA clearance clashes when doors swing and appliances drop open.',
+      emptySchema,
+      true,
+      () => {
+        const project = useProjectStore.getState().project;
+        const clashes = detectDynamicClashes(project);
+        return {
+          clashCount: clashes.length,
+          hasErrors: clashes.some((c) => c.severity === 'error'),
+          clashes,
+        };
+      },
+    ),
+    defineTool(
+      'evaluate_work_triangle',
+      'Measures NKBA kitchen work triangle distance between Sink, Refrigerator, and Cooktop.',
+      emptySchema,
+      true,
+      () => {
+        const project = useProjectStore.getState().project;
+        const sinkCab = project.cabinets.find((c) => c.definitionId.startsWith('SB'));
+        const fridge = project.appliances.find((a) => a.type === 'refrigerator');
+        const cooktop = project.appliances.find((a) => a.type === 'range' || a.type === 'cooktop');
+
+        const wallById = new Map(project.walls.map((w) => [w.id, w]));
+
+        const sinkPos =
+          sinkCab && wallById.get(sinkCab.wallId)
+            ? wallLocalToWorld(wallById.get(sinkCab.wallId)!, {
+                offsetX: sinkCab.offsetX + sinkCab.width / 2,
+                elevation: sinkCab.elevation,
+                depthOffset: 0,
+              })
+            : null;
+
+        const fridgePos =
+          fridge && wallById.get(fridge.wallId)
+            ? wallLocalToWorld(wallById.get(fridge.wallId)!, {
+                offsetX: fridge.offsetX + fridge.width / 2,
+                elevation: fridge.elevation,
+                depthOffset: 0,
+              })
+            : null;
+
+        const cooktopPos =
+          cooktop && wallById.get(cooktop.wallId)
+            ? wallLocalToWorld(wallById.get(cooktop.wallId)!, {
+                offsetX: cooktop.offsetX + cooktop.width / 2,
+                elevation: cooktop.elevation,
+                depthOffset: 0,
+              })
+            : null;
+
+        const dist = (p1: { x: number; z: number } | null, p2: { x: number; z: number } | null) => {
+          if (!p1 || !p2) return null;
+          return Math.round((Math.hypot(p1.x - p2.x, p1.z - p2.z) / 16 / 12) * 10) / 10;
+        };
+
+        const legSinkToFridge = dist(sinkPos, fridgePos);
+        const legFridgeToCooktop = dist(fridgePos, cooktopPos);
+        const legCooktopToSink = dist(cooktopPos, sinkPos);
+
+        const totalPerimeterFeet =
+          legSinkToFridge !== null && legFridgeToCooktop !== null && legCooktopToSink !== null
+            ? Math.round((legSinkToFridge + legFridgeToCooktop + legCooktopToSink) * 10) / 10
+            : null;
+
+        const compliant =
+          totalPerimeterFeet !== null &&
+          totalPerimeterFeet >= 12 &&
+          totalPerimeterFeet <= 26 &&
+          legSinkToFridge !== null &&
+          legSinkToFridge >= 4 &&
+          legSinkToFridge <= 9 &&
+          legFridgeToCooktop !== null &&
+          legFridgeToCooktop >= 4 &&
+          legFridgeToCooktop <= 9 &&
+          legCooktopToSink !== null &&
+          legCooktopToSink >= 4 &&
+          legCooktopToSink <= 9;
+
+        return {
+          sinkPresent: Boolean(sinkPos),
+          fridgePresent: Boolean(fridgePos),
+          cooktopPresent: Boolean(cooktopPos),
+          legsFeet: {
+            sinkToFridge: legSinkToFridge,
+            fridgeToCooktop: legFridgeToCooktop,
+            cooktopToSink: legCooktopToSink,
+          },
+          totalPerimeterFeet,
+          nkbaCompliant: compliant,
+          nkbaStandard: '12ft <= Total <= 26ft, with each leg between 4ft and 9ft.',
+        };
       },
     ),
   ];

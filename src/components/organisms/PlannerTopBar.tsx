@@ -196,12 +196,16 @@ export function PlannerTopBar({ onOpenAutoFit }: PlannerTopBarProps) {
           Agent ({webMCPLogs.length})
         </Button>
 
-        {/* Links to BOM and Assembly */}
+        {/* Links to Cut List, BOM and Assembly */}
+        <Link prefetch={false} href="/cutlist/" className="button is-small is-ghost">
+          <SolarIcon name="solar:layers-linear" size={16} className="mr-1" />
+          <span>Cut List</span>
+        </Link>
+
         <Link prefetch={false} href="/bom/" className="button is-small is-primary is-outlined">
           <SolarIcon name="solar:bill-list-linear" size={16} className="mr-1" />
           <span>BOM</span>
         </Link>
-
         <Link prefetch={false} href="/assemble/" className="button is-small is-primary">
           <SolarIcon name="solar:clipboard-check-linear" size={16} className="mr-1" />
           <span>Assemble</span>

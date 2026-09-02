@@ -369,6 +369,50 @@
   color: #C084FC;
 }
 
+.planner-clearance-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px dashed rgb(56 189 248 / 60%);
+  border-radius: 4px;
+  background: rgb(15 23 42 / 94%);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 45%);
+  color: #38BDF8;
+  font-family: t.$font-family-mono;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition: all 120ms ease;
+  white-space: nowrap;
+}
+
+.planner-clearance-badge:hover {
+  border-style: solid;
+  border-color: #38BDF8;
+  background: rgb(56 189 248 / 20%);
+  color: #FFF;
+  transform: scale(1.05);
+}
+
+.planner-clearance-input-form {
+  display: inline-flex;
+}
+
+.planner-clearance-input {
+  width: 58px;
+  height: 24px;
+  padding: 0 4px;
+  border: 1px solid #38BDF8;
+  border-radius: 4px;
+  background: rgb(15 23 42 / 96%);
+  color: #38BDF8;
+  font-family: t.$font-family-mono;
+  font-size: 0.75rem;
+  font-weight: 700;
+  outline: none;
+}
+
 .planner-controls-guide ul {
   display: grid;
   gap: t.$space-xs;
