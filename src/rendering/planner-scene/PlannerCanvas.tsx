@@ -37,6 +37,10 @@ import {
   worldToWallLocal,
 } from '@/domain/geometry/wall-transform';
 import { registerPlannerCaptureHandle } from '@/rendering/screenshots/capture-canvas';
+import {
+  SHARED_UNIT_BOX_GEOMETRY,
+  SHARED_UNIT_CYLINDER_GEOMETRY,
+} from '@/rendering/shared-geometries';
 import { type Measurement, useProjectStore } from '@/state/project-store';
 
 function CabinetMeshGroup({
@@ -204,33 +208,40 @@ function CabinetMeshGroup({
       onPointerCancel={cancelDrag}
       onLostPointerCapture={cancelDrag}
     >
+      <mesh
+        position={[model.widthInches / 2, model.heightInches / 2, model.depthInches / 2]}
+        geometry={SHARED_UNIT_BOX_GEOMETRY}
+        scale={[model.widthInches, model.heightInches, model.depthInches]}
+      >
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+
       {visibleParts.map((part) => {
         const isFinish = part.materialRole === 'finish';
         const isHardware = part.materialRole === 'hardware';
         const rotation = part.rotationDegrees?.map((degrees) => (degrees * Math.PI) / 180) as
           | [number, number, number]
           | undefined;
+        const isCylinder = part.primitive === 'cylinder';
+        const scale: [number, number, number] = isCylinder
+          ? [
+              (part.radiusInches ?? part.widthInches / 2) * 2,
+              part.heightInches,
+              (part.radiusInches ?? part.widthInches / 2) * 2,
+            ]
+          : [part.widthInches, part.heightInches, part.depthInches];
 
         return (
           <mesh
             key={part.id}
             position={part.positionInches}
             rotation={rotation}
+            geometry={isCylinder ? SHARED_UNIT_CYLINDER_GEOMETRY : SHARED_UNIT_BOX_GEOMETRY}
+            scale={scale}
             castShadow
             receiveShadow
+            raycast={() => null}
           >
-            {part.primitive === 'cylinder' ? (
-              <cylinderGeometry
-                args={[
-                  part.radiusInches ?? part.widthInches / 2,
-                  part.radiusInches ?? part.widthInches / 2,
-                  part.heightInches,
-                  16,
-                ]}
-              />
-            ) : (
-              <boxGeometry args={[part.widthInches, part.heightInches, part.depthInches]} />
-            )}
             {isFinish ? (
               <meshStandardMaterial
                 color={outerColor}
@@ -262,10 +273,12 @@ function CabinetMeshGroup({
       })}
 
       {isSelected && (
-        <mesh position={[model.widthInches / 2, model.heightInches / 2, model.depthInches / 2]}>
-          <boxGeometry
-            args={[model.widthInches + 0.5, model.heightInches + 0.5, model.depthInches + 0.5]}
-          />
+        <mesh
+          position={[model.widthInches / 2, model.heightInches / 2, model.depthInches / 2]}
+          geometry={SHARED_UNIT_BOX_GEOMETRY}
+          scale={[model.widthInches + 0.5, model.heightInches + 0.5, model.depthInches + 0.5]}
+          raycast={() => null}
+        >
           <meshBasicMaterial
             color="#38BDF8"
             transparent
@@ -340,8 +353,11 @@ function OpeningMesh({
         onSelect(opening.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
       }}
     >
-      <mesh position={[width / 2, height / 2, depth / 2]}>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh
+        position={[width / 2, height / 2, depth / 2]}
+        geometry={SHARED_UNIT_BOX_GEOMETRY}
+        scale={[width, height, depth]}
+      >
         <meshStandardMaterial
           color="#B7D5E8"
           transparent
@@ -386,8 +402,13 @@ function ApplianceMesh({
         onSelect(appliance.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
       }}
     >
-      <mesh position={[width / 2, height / 2, depth / 2]} castShadow receiveShadow>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh
+        position={[width / 2, height / 2, depth / 2]}
+        geometry={SHARED_UNIT_BOX_GEOMETRY}
+        scale={[width, height, depth]}
+        castShadow
+        receiveShadow
+      >
         <meshStandardMaterial
           color="#8794A3"
           metalness={0.35}
@@ -553,8 +574,13 @@ function BuiltInElementMesh({
       onPointerCancel={cancelDrag}
       onLostPointerCapture={cancelDrag}
     >
-      <mesh position={[width / 2, height / 2, depth / 2]} castShadow receiveShadow>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh
+        position={[width / 2, height / 2, depth / 2]}
+        geometry={SHARED_UNIT_BOX_GEOMETRY}
+        scale={[width, height, depth]}
+        castShadow
+        receiveShadow
+      >
         <meshStandardMaterial
           color={isGhost ? '#60A5FA' : (finish?.colorHex ?? '#D6DCE4')}
           roughness={finish?.roughness ?? 0.65}

@@ -12,7 +12,10 @@ import {
 } from '@/domain/assembly/step-presentation';
 import type { BuiltCabinetModel, CabinetPartMeshSpec } from '@/domain/geometry/part-builder';
 import { useReducedMotionPreference } from '@/hooks/use-reduced-motion-preference';
-
+import {
+  SHARED_UNIT_BOX_GEOMETRY,
+  SHARED_UNIT_CYLINDER_GEOMETRY,
+} from '@/rendering/shared-geometries';
 export interface AssemblyDiagramCanvasProps {
   model: BuiltCabinetModel;
   activeStepNumber: number;
@@ -100,36 +103,38 @@ function AnimatedAssemblyPart({
 
   return (
     <group ref={groupRef} position={initialPosition}>
-      <mesh
-        rotation={
-          part.rotationDegrees?.map((degrees) => (degrees * Math.PI) / 180) as
-            | [number, number, number]
-            | undefined
-        }
-        castShadow
-        receiveShadow
-      >
-        {part.primitive === 'cylinder' ? (
-          <cylinderGeometry
-            args={[
-              part.radiusInches ?? part.widthInches / 2,
-              part.radiusInches ?? part.widthInches / 2,
+      {(() => {
+        const isCylinder = part.primitive === 'cylinder';
+        const scale: [number, number, number] = isCylinder
+          ? [
+              (part.radiusInches ?? part.widthInches / 2) * 2,
               part.heightInches,
-              16,
-            ]}
-          />
-        ) : (
-          <boxGeometry args={[part.widthInches, part.heightInches, part.depthInches]} />
-        )}
-        <meshStandardMaterial
-          color={material.color}
-          opacity={material.opacity}
-          transparent={material.opacity < 1}
-          depthWrite={material.opacity === 1}
-          roughness={0.45}
-        />
-        <Edges color={edgeColor} lineWidth={edgeWidth} />
-      </mesh>
+              (part.radiusInches ?? part.widthInches / 2) * 2,
+            ]
+          : [part.widthInches, part.heightInches, part.depthInches];
+        return (
+          <mesh
+            geometry={isCylinder ? SHARED_UNIT_CYLINDER_GEOMETRY : SHARED_UNIT_BOX_GEOMETRY}
+            scale={scale}
+            rotation={
+              part.rotationDegrees?.map((degrees) => (degrees * Math.PI) / 180) as
+                | [number, number, number]
+                | undefined
+            }
+            castShadow
+            receiveShadow
+          >
+            <meshStandardMaterial
+              color={material.color}
+              opacity={material.opacity}
+              transparent={material.opacity < 1}
+              depthWrite={material.opacity === 1}
+              roughness={0.45}
+            />
+            <Edges color={edgeColor} lineWidth={edgeWidth} />
+          </mesh>
+        );
+      })()}
       {state === 'active' && callout && (
         <Html position={[0, Math.max(part.heightInches / 2, 1) + 1, 0]} center>
           <button
