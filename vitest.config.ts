@@ -16,13 +16,13 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@components': path.resolve(__dirname, './src/components'),
-      '@domain': path.resolve(__dirname, './src/domain'),
-      '@rendering': path.resolve(__dirname, './src/rendering'),
-      '@state': path.resolve(__dirname, './src/state'),
-      '@styles': path.resolve(__dirname, './src/styles'),
-      '@webmcp': path.resolve(__dirname, './src/webmcp'),
+      '@': path.resolve(import.meta.dirname, './src'),
+      '@components': path.resolve(import.meta.dirname, './src/components'),
+      '@domain': path.resolve(import.meta.dirname, './src/domain'),
+      '@rendering': path.resolve(import.meta.dirname, './src/rendering'),
+      '@state': path.resolve(import.meta.dirname, './src/state'),
+      '@styles': path.resolve(import.meta.dirname, './src/styles'),
+      '@webmcp': path.resolve(import.meta.dirname, './src/webmcp'),
     },
   },
 });
