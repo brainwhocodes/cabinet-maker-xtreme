@@ -11,7 +11,7 @@ import {
 } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
-import { Plane, Vector3 } from 'three';
+import { MOUSE, Plane, Vector3 } from 'three';
 import { resolveCabinetSpec } from '@/domain/cabinet/resolve-cabinet-spec';
 import { FINISH_OPTIONS, getCabinetDefinitionByCode } from '@/domain/catalog/standard-cabinets';
 import {
@@ -77,6 +77,7 @@ function CabinetMeshGroup({
   const dragHitPoint = useMemo(() => new Vector3(), []);
   const {
     selectedEntityIds,
+    navigationTool,
     startSceneMovePreview,
     updateScenePreview,
     commitScenePreview,
@@ -115,6 +116,7 @@ function CabinetMeshGroup({
         0,
       ]}
       onClick={(event) => {
+        if (navigationTool !== 'select') return;
         event.stopPropagation();
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -123,7 +125,7 @@ function CabinetMeshGroup({
         onSelect?.(cabinet.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
       }}
       onPointerDown={(event) => {
-        if (isGhost) return;
+        if (isGhost || navigationTool !== 'select') return;
         event.stopPropagation();
         onSelect?.(cabinet.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
         const local = worldToWallLocal(wall, {
@@ -325,6 +327,7 @@ function OpeningMesh({
   clippingPlanes: Plane[];
   onSelect(id: string, mode: 'replace' | 'toggle'): void;
 }) {
+  const { navigationTool } = useProjectStore();
   const width = sixteenthsToInches(opening.width);
   const height = sixteenthsToInches(opening.height);
   const depth = Math.max(0.5, sixteenthsToInches(opening.depth));
@@ -332,6 +335,7 @@ function OpeningMesh({
     <group
       position={[sixteenthsToInches(opening.offsetX), sixteenthsToInches(opening.elevation), 0]}
       onClick={(event) => {
+        if (navigationTool !== 'select') return;
         event.stopPropagation();
         onSelect(opening.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
       }}
@@ -369,6 +373,7 @@ function ApplianceMesh({
   clippingPlanes: Plane[];
   onSelect(id: string, mode: 'replace' | 'toggle'): void;
 }) {
+  const { navigationTool } = useProjectStore();
   const width = sixteenthsToInches(appliance.width);
   const height = sixteenthsToInches(appliance.height);
   const depth = sixteenthsToInches(appliance.depth);
@@ -376,6 +381,7 @@ function ApplianceMesh({
     <group
       position={[sixteenthsToInches(appliance.offsetX), sixteenthsToInches(appliance.elevation), 0]}
       onClick={(event) => {
+        if (navigationTool !== 'select') return;
         event.stopPropagation();
         onSelect(appliance.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
       }}
@@ -433,6 +439,7 @@ function BuiltInElementMesh({
   const dragHitPoint = useMemo(() => new Vector3(), []);
   const {
     selectedEntityIds,
+    navigationTool,
     startSceneMovePreview,
     updateScenePreview,
     commitScenePreview,
@@ -459,6 +466,7 @@ function BuiltInElementMesh({
         sixteenthsToInches(element.depthOffset),
       ]}
       onClick={(event) => {
+        if (navigationTool !== 'select') return;
         event.stopPropagation();
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -467,7 +475,7 @@ function BuiltInElementMesh({
         onSelect?.(element.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
       }}
       onPointerDown={(event) => {
-        if (isGhost) return;
+        if (isGhost || navigationTool !== 'select') return;
         event.stopPropagation();
         onSelect?.(element.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
         const local = worldToWallLocal(wall, {
@@ -965,9 +973,21 @@ function CameraRig({
       zoomSpeed={1.1}
       minDistance={12}
       maxDistance={450}
-      enableRotate={viewMode === 'perspective' && navigationTool !== 'pan'}
-      enablePan={true}
+      enableRotate={viewMode === 'perspective' && navigationTool === 'orbit'}
+      enablePan={navigationTool === 'pan'}
       enableZoom={true}
+      mouseButtons={{
+        LEFT:
+          navigationTool === 'orbit'
+            ? MOUSE.ROTATE
+            : navigationTool === 'pan'
+              ? MOUSE.PAN
+              : navigationTool === 'zoom'
+                ? MOUSE.DOLLY
+                : undefined,
+        MIDDLE: MOUSE.DOLLY,
+        RIGHT: MOUSE.PAN,
+      }}
       maxPolarAngle={viewMode === 'top' ? 0.01 : Math.PI / 2 - 0.02}
       minPolarAngle={viewMode === 'top' ? 0 : 0.05}
       onStart={() => {
@@ -1631,7 +1651,9 @@ export function PlannerCanvas() {
         }}
         dpr={[1, 1.5]}
         style={{ width: '100%', height: '100%', display: 'block' }}
-        onPointerMissed={clearSceneSelection}
+        onPointerMissed={() => {
+          if (navigationTool === 'select') clearSceneSelection();
+        }}
       >
         <PlannerCaptureRegistrar setIncludeTransientPreview={setIncludeTransientPreview} />
         <SceneContent
