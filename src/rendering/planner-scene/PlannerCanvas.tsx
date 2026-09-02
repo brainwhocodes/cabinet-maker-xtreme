@@ -1487,6 +1487,12 @@ export function PlannerCanvas() {
         setStatus('Wall Elevation view');
         return;
       }
+      if ((key === 'v' || key === 's') && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        liveState.setNavigationTool('select');
+        setStatus('Select and move tool active');
+        return;
+      }
       if (key === 'o' && !event.ctrlKey && !event.metaKey) {
         event.preventDefault();
         liveState.setNavigationTool('orbit');
@@ -1583,11 +1589,15 @@ export function PlannerCanvas() {
 
   const canvasCursor = isOrbiting
     ? 'grabbing'
-    : navigationTool === 'pan'
-      ? 'all-scroll'
-      : navigationTool === 'measure'
-        ? 'crosshair'
-        : 'grab';
+    : navigationTool === 'select'
+      ? 'default'
+      : navigationTool === 'pan'
+        ? 'all-scroll'
+        : navigationTool === 'zoom'
+          ? 'zoom-in'
+          : navigationTool === 'measure'
+            ? 'crosshair'
+            : 'grab';
 
   return (
     <section

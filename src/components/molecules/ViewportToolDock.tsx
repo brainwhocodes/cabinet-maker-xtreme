@@ -14,6 +14,34 @@ export function ViewportToolDock({ onOpenAutoFit }: ViewportToolDockProps) {
     <div className="planner-viewport-tool-dock" role="toolbar" aria-label="3D Viewport tools">
       <button
         type="button"
+        className={`planner-dock-tool-btn ${navigationTool === 'select' ? 'is-active' : ''}`}
+        onClick={() => setNavigationTool('select')}
+        title="Select & Move Cabinets (Hotkey: V or S)"
+        aria-label="Select and move tool"
+        aria-pressed={navigationTool === 'select'}
+      >
+        <span className="planner-dock-tool-icon">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m3 3 7 18 3-7 7-3L3 3z" />
+          </svg>
+        </span>
+        <span className="planner-dock-tool-label">Select</span>
+      </button>
+
+      <span className="planner-dock-separator" aria-hidden="true" />
+
+      <button
+        type="button"
         className={`planner-dock-tool-btn ${navigationTool === 'orbit' ? 'is-active' : ''}`}
         onClick={() => setNavigationTool('orbit')}
         title="Orbit / Rotate Camera (Hotkey: O)"

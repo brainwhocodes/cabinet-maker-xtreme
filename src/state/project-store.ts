@@ -129,7 +129,7 @@ export interface ProjectState {
   cameraPreset: CameraPreset;
   showDimensions: boolean;
   cameraTransitionToken: number;
-  navigationTool: 'orbit' | 'pan' | 'zoom' | 'measure';
+  navigationTool: 'select' | 'orbit' | 'pan' | 'zoom' | 'measure';
   snapEnabled: boolean;
   canUndo: boolean;
   canRedo: boolean;
@@ -236,7 +236,7 @@ export interface ProjectState {
   isolateSelection(): void;
   showAllEntities(): void;
   toggleSceneLabels(): void;
-  setNavigationTool(tool: 'orbit' | 'pan' | 'zoom' | 'measure'): void;
+  setNavigationTool(tool: 'select' | 'orbit' | 'pan' | 'zoom' | 'measure'): void;
   toggleSnap(): void;
   setMeasureMode(active: boolean): void;
   addMeasurementPoint(point: MeasurementPoint): SceneCommandResult;
@@ -425,7 +425,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     viewMode: 'perspective',
     cameraPreset: 'room',
     showDimensions: true,
-    navigationTool: 'orbit',
+    navigationTool: 'select',
     snapEnabled: true,
     canUndo: false,
     canRedo: false,

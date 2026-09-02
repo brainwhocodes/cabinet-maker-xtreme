@@ -38,7 +38,7 @@
   position: absolute;
   top: t.$space-sm;
   left: t.$space-sm;
-  z-index: t.$z-hud;
+  z-index: t.$z-hud + 10;
   display: flex;
   align-items: center;
   gap: t.$space-sm;
@@ -630,6 +630,14 @@
   .validation-panel {
     right: 0 !important;
     left: 0 !important;
+  }
+
+  .planner-canvas-actions {
+    z-index: t.$z-hud + 10;
+  }
+
+  .planner-viewport-tool-dock {
+    display: none;
   }
 
   .planner-placement-bar {
