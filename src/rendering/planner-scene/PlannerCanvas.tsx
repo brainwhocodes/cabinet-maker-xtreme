@@ -241,44 +241,91 @@ function CabinetMeshGroup({
             ]
           : [part.widthInches, part.heightInches, part.depthInches];
 
+        const isDoor = part.category === 'door';
+        const isShaker =
+          isDoor &&
+          cabinet.doorStyleId === 'shaker' &&
+          part.widthInches > 5 &&
+          part.heightInches > 5;
+        const isRaised =
+          isDoor &&
+          cabinet.doorStyleId === 'raised_panel' &&
+          part.widthInches > 5 &&
+          part.heightInches > 5;
+
         return (
-          <mesh
-            key={part.id}
-            position={part.positionInches}
-            rotation={rotation}
-            geometry={isCylinder ? SHARED_UNIT_CYLINDER_GEOMETRY : SHARED_UNIT_BOX_GEOMETRY}
-            scale={scale}
-            castShadow
-            receiveShadow
-            raycast={() => null}
-          >
-            {isFinish ? (
-              <meshStandardMaterial
-                color={outerColor}
-                roughness={model.finish.roughness}
-                transparent={isGhost}
-                opacity={finishOpacity}
-                clippingPlanes={clippingPlanes}
-              />
-            ) : isHardware ? (
-              <meshStandardMaterial
-                color={model.hardware.colorHex}
-                metalness={model.hardware.metalness}
-                roughness={0.2}
-                transparent={isGhost}
-                opacity={hardwareOpacity}
-                clippingPlanes={clippingPlanes}
-              />
-            ) : (
-              <meshStandardMaterial
-                color={innerColor}
-                roughness={model.interiorFinish.roughness}
-                transparent={isGhost}
-                opacity={interiorOpacity}
-                clippingPlanes={clippingPlanes}
-              />
+          <group key={part.id} position={part.positionInches} rotation={rotation}>
+            <mesh
+              geometry={isCylinder ? SHARED_UNIT_CYLINDER_GEOMETRY : SHARED_UNIT_BOX_GEOMETRY}
+              scale={scale}
+              castShadow
+              receiveShadow
+              raycast={() => null}
+            >
+              {isFinish ? (
+                <meshStandardMaterial
+                  color={outerColor}
+                  roughness={model.finish.roughness}
+                  transparent={isGhost}
+                  opacity={finishOpacity}
+                  clippingPlanes={clippingPlanes}
+                />
+              ) : isHardware ? (
+                <meshStandardMaterial
+                  color={model.hardware.colorHex}
+                  metalness={model.hardware.metalness}
+                  roughness={0.2}
+                  transparent={isGhost}
+                  opacity={hardwareOpacity}
+                  clippingPlanes={clippingPlanes}
+                />
+              ) : (
+                <meshStandardMaterial
+                  color={innerColor}
+                  roughness={model.interiorFinish.roughness}
+                  transparent={isGhost}
+                  opacity={interiorOpacity}
+                  clippingPlanes={clippingPlanes}
+                />
+              )}
+            </mesh>
+
+            {isShaker && (
+              <mesh
+                position={[0, 0, part.depthInches / 2 + 0.01]}
+                geometry={SHARED_UNIT_BOX_GEOMETRY}
+                scale={[part.widthInches - 4.5, part.heightInches - 4.5, 0.05]}
+                raycast={() => null}
+              >
+                <meshStandardMaterial
+                  color={outerColor}
+                  roughness={Math.min(1, model.finish.roughness + 0.15)}
+                  transparent={isGhost}
+                  opacity={finishOpacity * 0.92}
+                  clippingPlanes={clippingPlanes}
+                />
+                <Edges color="#475569" />
+              </mesh>
             )}
-          </mesh>
+
+            {isRaised && (
+              <mesh
+                position={[0, 0, part.depthInches / 2 + 0.03]}
+                geometry={SHARED_UNIT_BOX_GEOMETRY}
+                scale={[part.widthInches - 5, part.heightInches - 5, 0.1]}
+                raycast={() => null}
+              >
+                <meshStandardMaterial
+                  color={outerColor}
+                  roughness={Math.max(0, model.finish.roughness - 0.05)}
+                  transparent={isGhost}
+                  opacity={finishOpacity}
+                  clippingPlanes={clippingPlanes}
+                />
+                <Edges color="#64748B" />
+              </mesh>
+            )}
+          </group>
         );
       })}
 

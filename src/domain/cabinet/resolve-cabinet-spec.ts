@@ -106,18 +106,20 @@ export function resolveCabinetSpec(
   const hardwareId = instance?.hardwareId ?? 'matte_black_bar';
   const finishId = instance?.finishId ?? 'polar_white';
   const interiorFinishId = instance?.interiorFinishId ?? 'natural_birch';
-  const doorStyleId = instance?.doorStyleId ?? 'shaker';
+  const rawDoorStyleId = instance?.doorStyleId ?? 'shaker';
+  const doorStyleId = rawDoorStyleId === 'slab' ? 'slab_modern' : rawDoorStyleId;
   const hardware = HARDWARE_OPTIONS.find((option) => option.id === hardwareId);
   const finish = FINISH_OPTIONS.find((option) => option.id === finishId);
   const interiorFinish = INTERIOR_FINISH_OPTIONS.find((option) => option.id === interiorFinishId);
-  const doorStyle = DOOR_STYLES.find((option) => option.id === doorStyleId);
-
+  const doorStyle = DOOR_STYLES.find(
+    (option) => option.id === doorStyleId || option.id === rawDoorStyleId,
+  );
   if (!hardware) throw new Error(`Unknown hardware option: ${hardwareId}`);
   if (!finish) throw new Error(`Unknown finish option: ${finishId}`);
   if (!interiorFinish) {
     throw new Error(`Unknown interior finish option: ${interiorFinishId}`);
   }
-  if (!doorStyle) throw new Error(`Unknown door style option: ${doorStyleId}`);
+  if (!doorStyle) throw new Error(`Unknown door style option: ${rawDoorStyleId}`);
 
   validateBuildConfig(build, widthInches, heightInches, depthInches);
 

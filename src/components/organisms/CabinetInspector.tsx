@@ -7,7 +7,7 @@ import {
   HARDWARE_OPTIONS,
   INTERIOR_FINISH_OPTIONS,
 } from '@/domain/catalog/standard-cabinets';
-import type { CabinetInstance, DoorSwing } from '@/domain/geometry/models';
+import type { CabinetFrontLayout, CabinetInstance, DoorSwing } from '@/domain/geometry/models';
 import { inchesToSixteenths } from '@/domain/geometry/units';
 import { captureStudioScreenshot } from '@/rendering/screenshots/capture-canvas';
 import { type EditableCabinetPatch, useProjectStore } from '@/state/project-store';
@@ -26,6 +26,14 @@ const DOOR_SWING_OPTIONS = [
   { value: 'double', label: 'Double Doors (Pair)' },
   { value: 'drawers', label: '3-Drawer Tier' },
   { value: 'open_shelf', label: 'Open Shelf / Filler' },
+];
+const FRONT_LAYOUT_OPTIONS = [
+  { value: 'single_door', label: 'Single Door' },
+  { value: 'double_door', label: 'Double Doors' },
+  { value: 'door_and_drawer', label: 'Door & Drawer' },
+  { value: 'drawers', label: 'Drawers Tier' },
+  { value: 'open', label: 'Open Shelf' },
+  { value: 'false_front', label: 'False Front' },
 ];
 
 export interface CabinetInspectorProps {
@@ -172,13 +180,72 @@ export function CabinetInspector({
         <h5 className="is-size-7 has-text-weight-bold has-text-grey uppercase mb-2">
           Door & Front Options
         </h5>
+        <FormField label="Front Layout">
+          <Select
+            selectSize="sm"
+            aria-label="Front Layout"
+            options={FRONT_LAYOUT_OPTIONS}
+            value={cabinet.build?.frontLayout ?? 'single_door'}
+            onChange={(e) => {
+              const frontLayout = e.target.value as CabinetFrontLayout;
+              const updates: EditableCabinetPatch = {
+                build: {
+                  frontLayout,
+                  drawerCount:
+                    frontLayout === 'drawers' || frontLayout === 'door_and_drawer'
+                      ? Math.max(3, cabinet.build?.drawerCount || 3)
+                      : 0,
+                },
+              };
+              if (frontLayout === 'drawers') updates.doorSwing = 'drawers';
+              else if (frontLayout === 'open') updates.doorSwing = 'open_shelf';
+              else if (frontLayout === 'false_front') updates.doorSwing = 'false_front';
+              else if (frontLayout === 'double_door') updates.doorSwing = 'double';
+              else if (
+                frontLayout === 'single_door' &&
+                cabinet.doorSwing !== 'left' &&
+                cabinet.doorSwing !== 'right'
+              ) {
+                updates.doorSwing = 'left';
+              }
+              onUpdate(cabinet.id, updates);
+            }}
+          />
+        </FormField>
+
         <FormField label="Door Swing Configuration">
           <Select
             selectSize="sm"
             aria-label="Door Swing Configuration"
             options={DOOR_SWING_OPTIONS}
             value={cabinet.doorSwing}
-            onChange={(e) => onUpdate(cabinet.id, { doorSwing: e.target.value as DoorSwing })}
+            onChange={(e) => {
+              const doorSwing = e.target.value as DoorSwing;
+              const updates: EditableCabinetPatch = { doorSwing };
+              if (doorSwing === 'drawers') {
+                updates.build = {
+                  frontLayout: 'drawers',
+                  drawerCount: Math.max(3, cabinet.build?.drawerCount || 3),
+                };
+              } else if (doorSwing === 'open_shelf') {
+                updates.build = { frontLayout: 'open', drawerCount: 0 };
+              } else if (doorSwing === 'double') {
+                if (
+                  cabinet.build?.frontLayout !== 'door_and_drawer' &&
+                  cabinet.build?.frontLayout !== 'false_front'
+                ) {
+                  updates.build = { frontLayout: 'double_door' };
+                }
+              } else if (doorSwing === 'left' || doorSwing === 'right') {
+                if (
+                  cabinet.build?.frontLayout !== 'door_and_drawer' &&
+                  cabinet.build?.frontLayout !== 'false_front'
+                ) {
+                  updates.build = { frontLayout: 'single_door' };
+                }
+              }
+              onUpdate(cabinet.id, updates);
+            }}
           />
         </FormField>
 
@@ -186,13 +253,14 @@ export function CabinetInspector({
           <Select
             aria-label="Door Style"
             selectSize="sm"
-            options={DOOR_STYLES.map((d) => ({ value: d.id, label: d.name }))}
-            value={cabinet.doorStyleId}
+            options={DOOR_STYLES.filter(
+              (d, index, self) => index === self.findIndex((o) => o.name === d.name),
+            ).map((d) => ({ value: d.id, label: d.name }))}
+            value={cabinet.doorStyleId === 'slab' ? 'slab_modern' : cabinet.doorStyleId}
             onChange={(e) => onUpdate(cabinet.id, { doorStyleId: e.target.value })}
           />
         </FormField>
       </div>
-
       {/* Exterior Finish (Outer) */}
       <div className="mb-4">
         <div className="is-flex is-align-items-center is-justify-content-between mb-2">

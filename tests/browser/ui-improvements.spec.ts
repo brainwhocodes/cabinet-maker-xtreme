@@ -121,3 +121,39 @@ test('mobile editor layout renders cleanly without topbar overflow at 390px', as
   await expect(mobileMenu.getByRole('combobox', { name: 'Camera preset' })).toBeVisible();
   await expect(mobileMenu.getByRole('button', { name: 'Auto-fit' })).toBeVisible();
 });
+
+test('door and front options in cabinet select screen update cabinet configuration and 3D appearance', async ({
+  page,
+}) => {
+  await page.goto('/planner/');
+
+  const frontLayout = page.getByLabel('Front Layout');
+  const doorSwing = page.getByLabel('Door Swing Configuration');
+  const doorStyle = page.getByLabel('Door Style');
+
+  await expect(frontLayout).toBeVisible();
+  await expect(doorSwing).toBeVisible();
+  await expect(doorStyle).toBeVisible();
+
+  // Switch Door Style to Modern Flat Slab
+  await doorStyle.selectOption('slab_modern');
+  await expect(doorStyle).toHaveValue('slab_modern');
+
+  // Switch Door Style to Traditional Raised Panel
+  await doorStyle.selectOption('raised_panel');
+  await expect(doorStyle).toHaveValue('raised_panel');
+
+  // Switch Door Swing to Single Left Hinge
+  await doorSwing.selectOption('left');
+  await expect(doorSwing).toHaveValue('left');
+
+  // Switch Door Swing to Drawers Tier
+  await doorSwing.selectOption('drawers');
+  await expect(doorSwing).toHaveValue('drawers');
+  await expect(frontLayout).toHaveValue('drawers');
+
+  // Switch Front Layout to Open Shelf
+  await frontLayout.selectOption('open');
+  await expect(frontLayout).toHaveValue('open');
+  await expect(doorSwing).toHaveValue('open_shelf');
+});

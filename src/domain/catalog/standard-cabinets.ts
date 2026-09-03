@@ -84,6 +84,12 @@ export const DOOR_STYLES: DoorStyleOption[] = [
     bevelDepthInches: 0,
   },
   {
+    id: 'slab',
+    name: 'Modern Flat Slab',
+    stileWidthInches: 0,
+    bevelDepthInches: 0,
+  },
+  {
     id: 'raised_panel',
     name: 'Traditional Raised Panel',
     stileWidthInches: 2.75,

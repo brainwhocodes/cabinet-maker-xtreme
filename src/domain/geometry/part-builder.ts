@@ -486,7 +486,11 @@ function addFronts(
   const usableBottom = toeHeight;
   const usableTop = height;
 
-  if (spec.frontLayout === 'drawers') {
+  if (spec.frontLayout === 'open' || spec.doorSwing === 'open_shelf') {
+    return;
+  }
+
+  if (spec.frontLayout === 'drawers' || spec.doorSwing === 'drawers') {
     addDrawerFronts(parts, spec, dimensions, usableBottom, usableTop, frontZ);
     return;
   }
@@ -608,10 +612,21 @@ function addDoorPanels(
   top: number,
   frontZ: number,
 ): void {
-  if (top <= bottom || spec.frontLayout === 'open') return;
+  if (
+    top <= bottom ||
+    spec.frontLayout === 'open' ||
+    spec.doorSwing === 'open_shelf' ||
+    spec.doorSwing === 'drawers'
+  ) {
+    return;
+  }
   const panelHeight = top - bottom - 0.25;
   const centerY = bottom + (top - bottom) / 2;
-  const isDouble = spec.frontLayout === 'double_door' || spec.doorSwing === 'double';
+  const isDouble =
+    spec.doorSwing === 'double' ||
+    (spec.doorSwing !== 'left' &&
+      spec.doorSwing !== 'right' &&
+      (spec.frontLayout === 'double_door' || dimensions.width >= 24));
 
   if (spec.family === 'tall') {
     addTallDoorPanels(parts, spec, dimensions, bottom, top, frontZ, isDouble);

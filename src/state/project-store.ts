@@ -600,6 +600,44 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       if (patch.hardwareId !== undefined) {
         build.includeHardware = patch.hardwareId !== 'no_hardware';
       }
+      if (patch.doorSwing !== undefined) {
+        if (patch.doorSwing === 'drawers') {
+          build.frontLayout = 'drawers';
+          build.drawerCount = Math.max(3, build.drawerCount || 3);
+        } else if (patch.doorSwing === 'open_shelf') {
+          build.frontLayout = 'open';
+          build.drawerCount = 0;
+        } else if (patch.doorSwing === 'false_front') {
+          build.frontLayout = 'false_front';
+          build.drawerCount = 0;
+        } else if (patch.doorSwing === 'double') {
+          if (build.frontLayout !== 'door_and_drawer' && build.frontLayout !== 'false_front') {
+            build.frontLayout = 'double_door';
+          }
+        } else if (patch.doorSwing === 'left' || patch.doorSwing === 'right') {
+          if (build.frontLayout !== 'door_and_drawer' && build.frontLayout !== 'false_front') {
+            build.frontLayout = 'single_door';
+          }
+        }
+      }
+      if (patch.build?.frontLayout !== undefined) {
+        if (patch.build.frontLayout === 'drawers') {
+          patch.doorSwing = 'drawers';
+          build.drawerCount = Math.max(3, build.drawerCount || 3);
+        } else if (patch.build.frontLayout === 'open') {
+          patch.doorSwing = 'open_shelf';
+          build.drawerCount = 0;
+        } else if (patch.build.frontLayout === 'false_front') {
+          patch.doorSwing = 'false_front';
+          build.drawerCount = 0;
+        } else if (patch.build.frontLayout === 'double_door') {
+          patch.doorSwing = 'double';
+        } else if (patch.build.frontLayout === 'single_door') {
+          if (existing.doorSwing !== 'left' && existing.doorSwing !== 'right') {
+            patch.doorSwing = 'left';
+          }
+        }
+      }
       const candidate: CabinetInstance = {
         ...existing,
         ...patch,
@@ -641,6 +679,44 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const build = { ...existing.build, ...patch.build };
       if (patch.hardwareId !== undefined) {
         build.includeHardware = patch.hardwareId !== 'no_hardware';
+      }
+      if (patch.doorSwing !== undefined) {
+        if (patch.doorSwing === 'drawers') {
+          build.frontLayout = 'drawers';
+          build.drawerCount = Math.max(3, build.drawerCount || 3);
+        } else if (patch.doorSwing === 'open_shelf') {
+          build.frontLayout = 'open';
+          build.drawerCount = 0;
+        } else if (patch.doorSwing === 'false_front') {
+          build.frontLayout = 'false_front';
+          build.drawerCount = 0;
+        } else if (patch.doorSwing === 'double') {
+          if (build.frontLayout !== 'door_and_drawer' && build.frontLayout !== 'false_front') {
+            build.frontLayout = 'double_door';
+          }
+        } else if (patch.doorSwing === 'left' || patch.doorSwing === 'right') {
+          if (build.frontLayout !== 'door_and_drawer' && build.frontLayout !== 'false_front') {
+            build.frontLayout = 'single_door';
+          }
+        }
+      }
+      if (patch.build?.frontLayout !== undefined) {
+        if (patch.build.frontLayout === 'drawers') {
+          patch.doorSwing = 'drawers';
+          build.drawerCount = Math.max(3, build.drawerCount || 3);
+        } else if (patch.build.frontLayout === 'open') {
+          patch.doorSwing = 'open_shelf';
+          build.drawerCount = 0;
+        } else if (patch.build.frontLayout === 'false_front') {
+          patch.doorSwing = 'false_front';
+          build.drawerCount = 0;
+        } else if (patch.build.frontLayout === 'double_door') {
+          patch.doorSwing = 'double';
+        } else if (patch.build.frontLayout === 'single_door') {
+          if (existing.doorSwing !== 'left' && existing.doorSwing !== 'right') {
+            patch.doorSwing = 'left';
+          }
+        }
       }
       const candidate: CabinetInstance = {
         ...existing,
