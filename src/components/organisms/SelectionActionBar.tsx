@@ -19,6 +19,8 @@ export function SelectionActionBar() {
     removeSelection,
     setCameraPreset,
     convertCabinetToBuilt,
+    undo,
+    canUndo,
   } = useProjectStore();
 
   if (selectedEntityIds.length === 0) return null;
@@ -47,6 +49,17 @@ export function SelectionActionBar() {
         <span>Duplicate</span>
       </button>
 
+      <button
+        type="button"
+        className="button is-small is-ghost planner-selection-btn"
+        disabled={!canUndo}
+        onClick={undo}
+        title="Undo last action (Ctrl+Z)"
+        aria-label="Undo last action"
+      >
+        <SolarIcon name="solar:undo-left-linear" size={15} />
+        <span>Undo</span>
+      </button>
       <button
         type="button"
         className="button is-small is-ghost planner-selection-btn"

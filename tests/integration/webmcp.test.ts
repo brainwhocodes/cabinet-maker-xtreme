@@ -29,6 +29,8 @@ const EXPECTED_TOOL_NAMES = [
   'export_cnc_dxf',
   'get_clearance_clashes',
   'evaluate_work_triangle',
+  'undo_last_action',
+  'redo_last_action',
 ];
 
 function tool(name: string) {
@@ -278,5 +280,21 @@ describe('WebMCP clean-cutover tool contract', () => {
     expect(triangle).toHaveProperty('fridgePresent');
     expect(triangle).toHaveProperty('cooktopPresent');
     expect(triangle).toHaveProperty('nkbaStandard');
+  });
+
+  it('supports undo and redo through WebMCP tools', async () => {
+    const initialRevision = useProjectStore.getState().project.revision;
+    // Perform a mutation
+    useProjectStore.getState().removeSelection();
+    const mutatedRevision = useProjectStore.getState().project.revision;
+    expect(mutatedRevision).toBeGreaterThan(initialRevision);
+
+    const undoResult = await execute('undo_last_action');
+    expect(undoResult.success).toBe(true);
+    expect(useProjectStore.getState().project.revision).toBe(initialRevision);
+
+    const redoResult = await execute('redo_last_action');
+    expect(redoResult.success).toBe(true);
+    expect(useProjectStore.getState().project.revision).toBe(mutatedRevision);
   });
 });

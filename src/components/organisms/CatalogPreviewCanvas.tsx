@@ -2,7 +2,7 @@
 
 import { OrbitControls, OrthographicCamera } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Component, type ReactNode, useMemo, useRef, useState } from 'react';
+import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { Group } from 'three';
 import type { PlannerCatalogEntry } from '@/domain/catalog/planner-catalog';
 import {
@@ -19,7 +19,10 @@ export function CatalogPreviewCanvas({
   entry: PlannerCatalogEntry;
   selectedCabinet?: CabinetInstance;
 }) {
-  const [webGLAvailable] = useState(() => isWebGLSupported());
+  const [webGLAvailable, setWebGLAvailable] = useState(true);
+  useEffect(() => {
+    setWebGLAvailable(isWebGLSupported());
+  }, []);
   if (webGLAvailable !== true) {
     return (
       <div className="catalog-preview-fallback" role="status">

@@ -11,7 +11,7 @@ import {
 } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { type ComponentRef, useEffect, useMemo, useRef, useState } from 'react';
-import { MOUSE, Plane, Vector3 } from 'three';
+import { type Camera, MOUSE, Plane, Vector3 } from 'three';
 import { resolveCabinetSpec } from '@/domain/cabinet/resolve-cabinet-spec';
 import { FINISH_OPTIONS, getCabinetDefinitionByCode } from '@/domain/catalog/standard-cabinets';
 import {
@@ -88,13 +88,19 @@ function CabinetMeshGroup({
     updateScenePreview,
     commitScenePreview,
     cancelScenePreview,
+    scenePreview,
   } = useProjectStore();
   const definition = getCabinetDefinitionByCode(cabinet.definitionId);
   if (!definition) return null;
 
   const model = buildCabinetParts(resolveCabinetSpec(definition, cabinet));
-  const outerColor = isGhost ? '#60A5FA' : model.finish.colorHex;
-  const innerColor = isGhost ? '#93C5FD' : model.interiorFinish.colorHex;
+  const previewValid = scenePreview?.valid ?? true;
+  const outerColor = isGhost ? (previewValid ? '#60A5FA' : '#EF4444') : model.finish.colorHex;
+  const innerColor = isGhost
+    ? previewValid
+      ? '#93C5FD'
+      : '#FCA5A5'
+    : model.interiorFinish.colorHex;
   const finishOpacity = isGhost ? 0.6 : 1;
   const interiorOpacity = isGhost ? 0.5 : 1;
   const hardwareOpacity = isGhost ? 0.5 : 1;
@@ -122,7 +128,7 @@ function CabinetMeshGroup({
         0,
       ]}
       onClick={(event) => {
-        if (navigationTool !== 'select') return;
+        if (isGhost || navigationTool !== 'select') return;
         event.stopPropagation();
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -133,7 +139,6 @@ function CabinetMeshGroup({
       onPointerDown={(event) => {
         if (isGhost || navigationTool !== 'select') return;
         event.stopPropagation();
-        onSelect?.(cabinet.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
         const local = worldToWallLocal(wall, {
           x: inchesToSixteenths(event.point.x),
           y: inchesToSixteenths(event.point.y),
@@ -158,6 +163,9 @@ function CabinetMeshGroup({
         );
         if (!drag.dragging && distance < 4) return;
         if (!drag.dragging) {
+          if (!selectedEntityIds.includes(cabinet.id)) {
+            onSelect?.(cabinet.id, 'replace');
+          }
           const ids = selectedEntityIds.includes(cabinet.id) ? selectedEntityIds : [cabinet.id];
           const started = startSceneMovePreview(ids, 0, 0, true);
           if (!started.ok) {
@@ -214,10 +222,10 @@ function CabinetMeshGroup({
         position={[model.widthInches / 2, model.heightInches / 2, model.depthInches / 2]}
         geometry={SHARED_UNIT_BOX_GEOMETRY}
         scale={[model.widthInches, model.heightInches, model.depthInches]}
+        raycast={isGhost ? () => null : undefined}
       >
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-
       {visibleParts.map((part) => {
         const isFinish = part.materialRole === 'finish';
         const isHardware = part.materialRole === 'hardware';
@@ -492,7 +500,7 @@ function BuiltInElementMesh({
         sixteenthsToInches(element.depthOffset),
       ]}
       onClick={(event) => {
-        if (navigationTool !== 'select') return;
+        if (isGhost || navigationTool !== 'select') return;
         event.stopPropagation();
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
@@ -503,7 +511,6 @@ function BuiltInElementMesh({
       onPointerDown={(event) => {
         if (isGhost || navigationTool !== 'select') return;
         event.stopPropagation();
-        onSelect?.(element.id, event.ctrlKey || event.metaKey ? 'toggle' : 'replace');
         const local = worldToWallLocal(wall, {
           x: inchesToSixteenths(event.point.x),
           y: inchesToSixteenths(event.point.y),
@@ -528,6 +535,9 @@ function BuiltInElementMesh({
         );
         if (!drag.dragging && distance < 4) return;
         if (!drag.dragging) {
+          if (!selectedEntityIds.includes(element.id)) {
+            onSelect?.(element.id, 'replace');
+          }
           const ids = selectedEntityIds.includes(element.id) ? selectedEntityIds : [element.id];
           const started = startSceneMovePreview(ids, 0, 0, true);
           if (!started.ok) {
@@ -585,9 +595,16 @@ function BuiltInElementMesh({
         scale={[width, height, depth]}
         castShadow
         receiveShadow
+        raycast={isGhost ? () => null : undefined}
       >
         <meshStandardMaterial
-          color={isGhost ? '#60A5FA' : (finish?.colorHex ?? '#D6DCE4')}
+          color={
+            isGhost
+              ? useProjectStore.getState().scenePreview?.valid
+                ? '#60A5FA'
+                : '#EF4444'
+              : (finish?.colorHex ?? '#D6DCE4')
+          }
           roughness={finish?.roughness ?? 0.65}
           transparent={isGhost}
           opacity={isGhost ? 0.55 : 1}
@@ -658,7 +675,10 @@ function WallSceneGroup({
       y: inchesToSixteenths(point.y),
       z: inchesToSixteenths(point.z),
     });
-    updateScenePreview(wall.id, local.offsetX, local.elevation, true);
+    const entity = scenePreview.cabinets[0] ?? scenePreview.builtInElements[0];
+    const halfWidth = entity ? Math.round(entity.width / 2) : 0;
+    const targetOffset = Math.max(0, local.offsetX - halfWidth);
+    updateScenePreview(wall.id, targetOffset, local.elevation, true);
   };
 
   return (
@@ -699,9 +719,13 @@ function WallSceneGroup({
             updatePlacementAtPoint(event.point);
             const current = useProjectStore.getState().scenePreview;
             if (!current) return;
-            const result = commitScenePreview(current.token, current.expectedRevision);
-            if (!result.ok) cancelScenePreview();
-            onMoveStatus(result.message);
+            if (current.valid) {
+              const result = commitScenePreview(current.token, current.expectedRevision);
+              if (!result.ok) cancelScenePreview();
+              onMoveStatus(result.message);
+            } else {
+              onMoveStatus(current.messages[0] ?? 'Placement blocked: invalid location');
+            }
           } else {
             onClearSelection();
           }
@@ -710,6 +734,31 @@ function WallSceneGroup({
         <boxGeometry args={[wallLength, wallHeight, wallThickness]} />
         <meshStandardMaterial color="#E8ECF1" roughness={0.9} clippingPlanes={clippingPlanes} />
       </mesh>
+      {scenePreview?.kind === 'placement' && (
+        <mesh
+          position={[wallLength / 2, wallHeight / 2, 0.05]}
+          onPointerMove={(event) => {
+            event.stopPropagation();
+            updatePlacementAtPoint(event.point);
+          }}
+          onClick={(event) => {
+            event.stopPropagation();
+            const current = useProjectStore.getState().scenePreview;
+            if (current?.kind === 'placement') {
+              if (current.valid) {
+                const result = commitScenePreview(current.token, current.expectedRevision);
+                if (!result.ok) cancelScenePreview();
+                onMoveStatus(result.message);
+              } else {
+                onMoveStatus(current.messages[0] ?? 'Placement blocked: invalid position');
+              }
+            }
+          }}
+        >
+          <planeGeometry args={[wallLength, wallHeight]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      )}
 
       {openings.map((opening) => (
         <OpeningMesh
@@ -884,20 +933,29 @@ function CameraRig({
   const { cameraPreset, cameraTransitionToken, navigationTool } = useProjectStore();
 
   const activeWallRef = useRef(activeWall);
-  activeWallRef.current = activeWall;
   const selectedWorldBoundsRef = useRef(selectedWorldBounds);
-  selectedWorldBoundsRef.current = selectedWorldBounds;
   const selectedWallRef = useRef(selectedWall);
-  selectedWallRef.current = selectedWall;
   const cameraPresetRef = useRef(cameraPreset);
-  cameraPresetRef.current = cameraPreset;
+
+  useEffect(() => {
+    activeWallRef.current = activeWall;
+    selectedWorldBoundsRef.current = selectedWorldBounds;
+    selectedWallRef.current = selectedWall;
+    cameraPresetRef.current = cameraPreset;
+  });
 
   const isTransitioningRef = useRef(false);
   const transitionProgressRef = useRef(0);
-  const startPosRef = useRef(new Vector3());
-  const targetPosRef = useRef(new Vector3());
-  const startTargetRef = useRef(new Vector3());
-  const targetLookAtRef = useRef(new Vector3());
+  const startPosRef = useRef<Vector3 | null>(null);
+  const targetPosRef = useRef<Vector3 | null>(null);
+  const startTargetRef = useRef<Vector3 | null>(null);
+  const targetLookAtRef = useRef<Vector3 | null>(null);
+  const currentTargetRef = useRef<Vector3 | null>(null);
+  if (!startPosRef.current) startPosRef.current = new Vector3();
+  if (!targetPosRef.current) targetPosRef.current = new Vector3();
+  if (!startTargetRef.current) startTargetRef.current = new Vector3();
+  if (!targetLookAtRef.current) targetLookAtRef.current = new Vector3();
+  if (!currentTargetRef.current) currentTargetRef.current = new Vector3();
   const hasInitializedRef = useRef(false);
 
   useEffect(() => {
@@ -957,12 +1015,12 @@ function CameraRig({
       return;
     }
 
-    startPosRef.current.copy(camera.position);
-    targetPosRef.current.set(...position);
-    startTargetRef.current.copy(
+    startPosRef.current?.copy(camera.position);
+    targetPosRef.current?.set(...position);
+    startTargetRef.current?.copy(
       controlsRef.current?.target ?? new Vector3(roomWidth / 2, roomHeight / 3, roomLength / 2),
     );
-    targetLookAtRef.current.set(...target);
+    targetLookAtRef.current?.set(...target);
     transitionProgressRef.current = 0;
     isTransitioningRef.current = true;
     invalidate();
@@ -974,13 +1032,17 @@ function CameraRig({
       const t = Math.min(1, transitionProgressRef.current);
       const ease = 1 - (1 - t) ** 3;
 
-      camera.position.lerpVectors(startPosRef.current, targetPosRef.current, ease);
-      const currentTarget = new Vector3().lerpVectors(
-        startTargetRef.current,
-        targetLookAtRef.current,
-        ease,
-      );
-      controlsRef.current?.target.copy(currentTarget);
+      if (
+        startPosRef.current &&
+        targetPosRef.current &&
+        startTargetRef.current &&
+        targetLookAtRef.current &&
+        currentTargetRef.current
+      ) {
+        camera.position.lerpVectors(startPosRef.current, targetPosRef.current, ease);
+        currentTargetRef.current.lerpVectors(startTargetRef.current, targetLookAtRef.current, ease);
+        controlsRef.current?.target.copy(currentTargetRef.current);
+      }
       controlsRef.current?.update();
       invalidate();
 
@@ -1138,13 +1200,19 @@ function SceneContent({
   onOrbitChange,
   orbitTarget,
   isOrbiting,
+  onCameraReady,
 }: {
   onMoveStatus(message: string): void;
   includeTransientPreview: boolean;
   onOrbitChange?(isOrbiting: boolean, target: [number, number, number]): void;
   orbitTarget: [number, number, number];
   isOrbiting: boolean;
+  onCameraReady?(camera: Camera): void;
 }) {
+  const { camera } = useThree();
+  useEffect(() => {
+    onCameraReady?.(camera);
+  }, [camera, onCameraReady]);
   const {
     project,
     selectedEntityIds,
@@ -1705,9 +1773,12 @@ export function PlannerCanvas() {
   } | null>(null);
   const marqueeStartRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
 
+  const cameraRef = useRef<Camera | null>(null);
+  const suppressMissedClickRef = useRef(false);
   const handleContainerPointerDown = (e: React.PointerEvent) => {
     if (navigationTool !== 'select') return;
     if ((e.target as HTMLElement).tagName !== 'CANVAS') return;
+    if (e.button !== 0) return;
     marqueeStartRef.current = { x: e.clientX, y: e.clientY, active: false };
   };
 
@@ -1726,13 +1797,81 @@ export function PlannerCanvas() {
     }
   };
 
-  const handleContainerPointerUp = () => {
+  const handleContainerPointerUp = (e: React.PointerEvent) => {
     const start = marqueeStartRef.current;
-    if (start?.active && marqueeBox) {
-      const selected = project.cabinets.map((c) => c.id);
-      if (selected.length > 0) {
-        useProjectStore.getState().setSceneSelection(selected, selected[0]);
-        setStatus(`Selected ${selected.length} entities with marquee`);
+    if (start?.active && marqueeBox && cameraRef.current && canvasRef.current) {
+      const camera = cameraRef.current;
+      const rect = canvasRef.current.getBoundingClientRect();
+      const minX = Math.min(marqueeBox.startX, marqueeBox.currentX);
+      const maxX = Math.max(marqueeBox.startX, marqueeBox.currentX);
+      const minY = Math.min(marqueeBox.startY, marqueeBox.currentY);
+      const maxY = Math.max(marqueeBox.startY, marqueeBox.currentY);
+
+      const hitIds: string[] = [];
+      const testPoint = new Vector3();
+      const wallById = new Map(project.walls.map((w) => [w.id, w]));
+
+      for (const cabinet of project.cabinets) {
+        const wall = wallById.get(cabinet.wallId);
+        if (!wall) continue;
+        const center = wallLocalToWorld(wall, {
+          offsetX: cabinet.offsetX + Math.round(cabinet.width / 2),
+          elevation: cabinet.elevation + Math.round(cabinet.height / 2),
+          depthOffset: Math.round(cabinet.depth / 2),
+        });
+        testPoint.set(
+          sixteenthsToInches(center.x),
+          sixteenthsToInches(center.y),
+          sixteenthsToInches(center.z),
+        );
+        testPoint.project(camera);
+        if (testPoint.z <= 1) {
+          const screenX = rect.left + (testPoint.x * 0.5 + 0.5) * rect.width;
+          const screenY = rect.top + (-testPoint.y * 0.5 + 0.5) * rect.height;
+          if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
+            hitIds.push(cabinet.id);
+          }
+        }
+      }
+
+      for (const element of project.builtInElements) {
+        const wall = wallById.get(element.wallId);
+        if (!wall) continue;
+        const center = wallLocalToWorld(wall, {
+          offsetX: element.offsetX + Math.round(element.width / 2),
+          elevation: element.elevation + Math.round(element.height / 2),
+          depthOffset: element.depthOffset + Math.round(element.depth / 2),
+        });
+        testPoint.set(
+          sixteenthsToInches(center.x),
+          sixteenthsToInches(center.y),
+          sixteenthsToInches(center.z),
+        );
+        testPoint.project(camera);
+        if (testPoint.z <= 1) {
+          const screenX = rect.left + (testPoint.x * 0.5 + 0.5) * rect.width;
+          const screenY = rect.top + (-testPoint.y * 0.5 + 0.5) * rect.height;
+          if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
+            hitIds.push(element.id);
+          }
+        }
+      }
+
+      suppressMissedClickRef.current = true;
+      setTimeout(() => {
+        suppressMissedClickRef.current = false;
+      }, 50);
+      if (hitIds.length > 0) {
+        const finalSelection = e.shiftKey
+          ? [...new Set([...selectedEntityIds, ...hitIds])]
+          : hitIds;
+        useProjectStore.getState().setSceneSelection(finalSelection, finalSelection[0]);
+        setStatus(
+          `Selected ${finalSelection.length} ${finalSelection.length === 1 ? 'entity' : 'entities'} with marquee`,
+        );
+      } else if (!e.shiftKey) {
+        clearSceneSelection();
+        setStatus('No entities in marquee area');
       }
     }
     marqueeStartRef.current = null;
@@ -1791,6 +1930,10 @@ export function PlannerCanvas() {
         dpr={[1, 1.5]}
         style={{ width: '100%', height: '100%', display: 'block' }}
         onPointerMissed={() => {
+          if (suppressMissedClickRef.current) {
+            suppressMissedClickRef.current = false;
+            return;
+          }
           if (navigationTool === 'select') clearSceneSelection();
         }}
       >
@@ -1801,6 +1944,9 @@ export function PlannerCanvas() {
           onOrbitChange={handleOrbitChange}
           orbitTarget={orbitTarget}
           isOrbiting={isOrbiting}
+          onCameraReady={(cam) => {
+            cameraRef.current = cam;
+          }}
         />
       </Canvas>
       <PlacementBar onStatus={setStatus} />

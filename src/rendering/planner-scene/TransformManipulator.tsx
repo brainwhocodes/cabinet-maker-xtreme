@@ -18,7 +18,6 @@ const CONE_GEOMETRY = new CylinderGeometry(0, 0.9, 2.5, 16);
 
 const RED_MATERIAL = new MeshBasicMaterial({ color: '#EF4444', depthTest: false });
 const GREEN_MATERIAL = new MeshBasicMaterial({ color: '#10B981', depthTest: false });
-const BLUE_MATERIAL = new MeshBasicMaterial({ color: '#3B82F6', depthTest: false });
 const CYAN_MATERIAL = new MeshBasicMaterial({
   color: '#06B6D4',
   depthTest: false,
@@ -43,7 +42,6 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
     configureCabinet,
   } = useProjectStore();
 
-  const [_hoveredAxis, setHoveredAxis] = useState<'x' | 'y' | 'z' | 'xy' | null>(null);
   const [editingClearance, setEditingClearance] = useState<'left' | 'right' | 'elevation' | null>(
     null,
   );
@@ -90,13 +88,16 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
 
   // Drag interaction refs
   const dragRef = useRef<{
-    axis: 'x' | 'y' | 'z' | 'xy';
+    axis: 'x' | 'y' | 'xy';
     pointerId: number;
     startClientX: number;
     startClientY: number;
     initialOffset: number;
     initialElevation: number;
-    initialDepthOffset: number;
+
+    grabOffset: number;
+    grabElevation: number;
+
     lastSnapped?: boolean;
   } | null>(null);
 
@@ -106,18 +107,41 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
   const dragHitPoint = useMemo(() => new Vector3(), []);
 
   const handlePointerDown = (
-    axis: 'x' | 'y' | 'z' | 'xy',
+    axis: 'x' | 'y' | 'xy',
     event: {
       stopPropagation: () => void;
       pointerId: number;
       clientX: number;
       clientY: number;
+      point?: Vector3;
+      ray?: { intersectPlane: (plane: Plane, target: Vector3) => Vector3 | null };
       target: unknown;
     },
   ) => {
     event.stopPropagation();
     const started = startSceneMovePreview([cabinet.id], 0, 0, snapEnabled);
     if (!started.ok) return;
+
+    const rotation = getWallRotationRadians(wall);
+    dragPlane.setFromNormalAndCoplanarPoint(
+      dragPlaneNormal.set(Math.sin(rotation), 0, Math.cos(rotation)),
+      dragPlaneOrigin.set(sixteenthsToInches(wall.start.x), 0, sixteenthsToInches(wall.start.y)),
+    );
+
+    let grabOffset = 0;
+    let grabElevation = 0;
+
+    const hit =
+      event.point ?? (event.ray ? event.ray.intersectPlane(dragPlane, dragHitPoint) : null);
+    if (hit) {
+      const local = worldToWallLocal(wall, {
+        x: inchesToSixteenths(hit.x),
+        y: inchesToSixteenths(hit.y),
+        z: inchesToSixteenths(hit.z),
+      });
+      grabOffset = local.offsetX - cabinet.offsetX;
+      grabElevation = local.elevation - cabinet.elevation;
+    }
 
     dragRef.current = {
       axis,
@@ -126,9 +150,10 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
       startClientY: event.clientY,
       initialOffset: cabinet.offsetX,
       initialElevation: cabinet.elevation,
-      initialDepthOffset: 0,
-    };
 
+      grabOffset,
+      grabElevation,
+    };
     const targetEl = event.target as { setPointerCapture?: (id: number) => void };
     targetEl.setPointerCapture?.(event.pointerId);
   };
@@ -161,10 +186,10 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
     let newElevation = cabinet.elevation;
 
     if (drag.axis === 'x' || drag.axis === 'xy') {
-      newOffsetX = local.offsetX;
+      newOffsetX = local.offsetX - drag.grabOffset;
     }
     if (drag.axis === 'y' || drag.axis === 'xy') {
-      let candidateElevation = local.elevation;
+      let candidateElevation = local.elevation - drag.grabElevation;
       // Elevation smart snaps (0", 34.5", 36", 54", 84", 96")
       if (snapEnabled) {
         const standardSnaps = [0, 34.5, 36, 54, 84, 96].map(inchesToSixteenths);
@@ -235,8 +260,6 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
       <group
         position={[widthIn / 2 + 3, 0, 0]}
         rotation={[0, 0, -Math.PI / 2]}
-        onPointerOver={() => setHoveredAxis('x')}
-        onPointerOut={() => setHoveredAxis(null)}
         onPointerDown={(e) => handlePointerDown('x', e)}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -248,8 +271,6 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
       {/* 2. Y-Axis Translation Arrow (Green) */}
       <group
         position={[0, heightIn / 2 + 3, 0]}
-        onPointerOver={() => setHoveredAxis('y')}
-        onPointerOut={() => setHoveredAxis(null)}
         onPointerDown={(e) => handlePointerDown('y', e)}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -258,28 +279,12 @@ export function TransformManipulator({ cabinet, wall, onStatus }: TransformManip
         <mesh position={[0, 3.5, 0]} geometry={CONE_GEOMETRY} material={GREEN_MATERIAL} />
       </group>
 
-      {/* 3. Z-Axis Translation Arrow (Blue) */}
-      <group
-        position={[0, 0, depthIn / 2 + 3]}
-        rotation={[Math.PI / 2, 0, 0]}
-        onPointerOver={() => setHoveredAxis('z')}
-        onPointerOut={() => setHoveredAxis(null)}
-        onPointerDown={(e) => handlePointerDown('z', e)}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      >
-        <mesh geometry={ARROW_GEOMETRY} material={BLUE_MATERIAL} />
-        <mesh position={[0, 3.5, 0]} geometry={CONE_GEOMETRY} material={BLUE_MATERIAL} />
-      </group>
-
       {/* 4. Center XY Planar Drag Handle (Cyan) */}
       <mesh
         position={[widthIn / 2 + 0.8, heightIn / 2 + 0.8, 0]}
         geometry={ARROW_GEOMETRY}
         scale={[0.8, 0.8, 0.8]}
         material={CYAN_MATERIAL}
-        onPointerOver={() => setHoveredAxis('xy')}
-        onPointerOut={() => setHoveredAxis(null)}
         onPointerDown={(e) => handlePointerDown('xy', e)}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

@@ -31,7 +31,7 @@ test.describe('End-to-End User Journeys', () => {
     await expect(selectionBar.locator('.planner-selection-count')).toHaveText('1');
     await expect(selectionBar.locator('.planner-selection-label')).toHaveText('Selected');
     // 3. Verify Nominal 3D Dimension Badges
-    await expect(page.getByText(/30" W/)).toBeVisible();
+    await expect(page.getByText('30" W', { exact: true })).toBeVisible();
     await expect(page.getByText(/34 1\/2" H/)).toBeVisible();
 
     // 4. Test View Transitions with Keyboard

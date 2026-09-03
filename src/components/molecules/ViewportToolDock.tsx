@@ -8,7 +8,16 @@ export interface ViewportToolDockProps {
 }
 
 export function ViewportToolDock({ onOpenAutoFit }: ViewportToolDockProps) {
-  const { navigationTool, setNavigationTool, snapEnabled, toggleSnap } = useProjectStore();
+  const {
+    navigationTool,
+    setNavigationTool,
+    snapEnabled,
+    toggleSnap,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useProjectStore();
 
   return (
     <div className="planner-viewport-tool-dock" role="toolbar" aria-label="3D Viewport tools">
@@ -140,6 +149,35 @@ export function ViewportToolDock({ onOpenAutoFit }: ViewportToolDockProps) {
         <span className="planner-dock-tool-label">Snap</span>
       </button>
 
+      <span className="planner-dock-separator" aria-hidden="true" />
+
+      <button
+        type="button"
+        className="planner-dock-tool-btn"
+        disabled={!canUndo}
+        onClick={undo}
+        title="Undo last action (Ctrl+Z)"
+        aria-label="Undo last action"
+      >
+        <span className="planner-dock-tool-icon">
+          <SolarIcon name="solar:undo-left-linear" size={18} />
+        </span>
+        <span className="planner-dock-tool-label">Undo</span>
+      </button>
+
+      <button
+        type="button"
+        className="planner-dock-tool-btn"
+        disabled={!canRedo}
+        onClick={redo}
+        title="Redo action (Ctrl+Y)"
+        aria-label="Redo action"
+      >
+        <span className="planner-dock-tool-icon">
+          <SolarIcon name="solar:undo-right-linear" size={18} />
+        </span>
+        <span className="planner-dock-tool-label">Redo</span>
+      </button>
       <span className="planner-dock-separator" aria-hidden="true" />
 
       <button

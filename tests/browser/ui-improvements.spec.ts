@@ -70,3 +70,54 @@ test('Three.js surfaces emit no deprecation warnings', async ({ page }) => {
 
   expect(deprecations).toEqual([]);
 });
+
+test('viewport tool dock provides working undo and redo controls', async ({ page }) => {
+  await page.goto('/planner/');
+
+  const dock = page.getByRole('toolbar', { name: '3D Viewport tools' });
+  const undoBtn = dock.getByRole('button', { name: 'Undo last action' });
+  const redoBtn = dock.getByRole('button', { name: 'Redo action' });
+
+  await expect(undoBtn).toBeVisible();
+  await expect(undoBtn).toBeDisabled();
+  await expect(redoBtn).toBeVisible();
+  await expect(redoBtn).toBeDisabled();
+
+  // Move cabinet with keyboard to create history
+  await page.keyboard.press('ArrowLeft');
+  await expect(undoBtn).toBeEnabled();
+
+  // Click undo
+  await undoBtn.click();
+  await expect(undoBtn).toBeDisabled();
+  await expect(redoBtn).toBeEnabled();
+
+  // Click redo
+  await redoBtn.click();
+  await expect(undoBtn).toBeEnabled();
+});
+
+test('mobile editor layout renders cleanly without topbar overflow at 390px', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/planner/');
+
+  const nav = page.getByRole('navigation', { name: 'main navigation' });
+  await expect(nav).toBeVisible();
+
+  const [scrollWidth, clientWidth] = await nav.evaluate((el) => [el.scrollWidth, el.clientWidth]);
+  expect(scrollWidth).toBeLessThanOrEqual(clientWidth + 2);
+
+  // Mobile tool dock is visible at the bottom
+  const dock = page.getByRole('toolbar', { name: '3D Viewport tools' });
+  await expect(dock).toBeVisible();
+
+  // Mobile menu toggle button exists and opens the actions menu
+  const menuToggle = page.getByRole('button', { name: 'Toggle editor actions menu' });
+  await expect(menuToggle).toBeVisible();
+  await menuToggle.click();
+
+  const mobileMenu = page.getByRole('menu', { name: 'Editor tools' });
+  await expect(mobileMenu).toBeVisible();
+  await expect(mobileMenu.getByRole('combobox', { name: 'Camera preset' })).toBeVisible();
+  await expect(mobileMenu.getByRole('button', { name: 'Auto-fit' })).toBeVisible();
+});

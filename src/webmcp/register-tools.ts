@@ -845,6 +845,30 @@ export function getWebMCPTools(): WebMCPToolDefinition[] {
         };
       },
     ),
+    defineTool(
+      'undo_last_action',
+      'Reverts the last project change using the project history stack.',
+      emptySchema,
+      false,
+      () => {
+        const state = useProjectStore.getState();
+        if (!state.canUndo) return { success: false, message: 'Nothing to undo' };
+        state.undo();
+        return { success: true, revision: useProjectStore.getState().project.revision };
+      },
+    ),
+    defineTool(
+      'redo_last_action',
+      'Reapplies the previously undone project change using the project history stack.',
+      emptySchema,
+      false,
+      () => {
+        const state = useProjectStore.getState();
+        if (!state.canRedo) return { success: false, message: 'Nothing to redo' };
+        state.redo();
+        return { success: true, revision: useProjectStore.getState().project.revision };
+      },
+    ),
   ];
 }
 
